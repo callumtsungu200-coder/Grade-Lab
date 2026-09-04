@@ -1,0 +1,1014 @@
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { AnimatePresence, motion } from 'framer-motion'
+import { SUBJECTS, SUBJECT_ORDER, flattenCards } from './subjects.js'
+import Header from './components/Header.jsx'
+import TopicsView from './components/TopicsView.jsx'
+import StudyView from './components/StudyView.jsx'
+import Toast from './components/Toast.jsx'
+import Gate from './components/Gate.jsx'
+import AuthGate from './components/AuthGate.jsx'
+import Paywall from './components/Paywall.jsx'
+import WelcomeSplash from './components/WelcomeSplash.jsx'
+import AdminDashboard from './components/AdminDashboard.jsx'
+import Profile from './components/Profile.jsx'
+import Shop from './components/Shop.jsx'
+import Leaderboard from './components/Leaderboard.jsx'
+import Landing from './components/Landing.jsx'
+import QuestionsView from './components/QuestionsView.jsx'
+import QuizView from './components/QuizView.jsx'
+import DeckComplete from './components/DeckComplete.jsx'
+import { getSetting, setSetting } from './settings.js'
+import { hasQuestions } from './questions/index.js'
+import { loadCustom, saveCustom, customToCards } from './customCards.js'
+import { randomQuote } from './quotes.js'
+import { AUTH_KEY } from './auth.js'
+import { computeGame, equippedAvatar, recordQuiz, CURRENCY } from './gamification.js'
+import { isSupabaseConfigured, supabase, fetchCloudProgress, saveCloudProgress, fetchPaid, upsertLeaderboard, deleteOwnAccount } from './supabaseClient.js'
+import { OWNER_EMAILS, SUPPORT_EMAIL, STRIPE_PORTAL_LINK, NAME_OVERRIDES } from './supabaseConfig.js'
+
+// Gather every subject's progress from localStorage into one object for the cloud.
+function gatherLocalProgress() {
+  const all = {}
+  SUBJECT_ORDER.forEach((id) => {
+    try {
+      const raw = localStorage.getItem(`gcse-flashcards-${id}-v1`)
+      if (raw) all[id] = JSON.parse(raw)
+    } catch {
+      /* ignore */
+    }
+  })
+  return all
+}
+
+const LAST_KEY = 'gcse-flashcards-last-subject'
+const storeKey = (id) => `gcse-flashcards-${id}-v1`
+
+// Short relative time for the "Saved 2m ago" label.
+function relTime(at) {
+  if (!at) return ''
+  const s = Math.floor((Date.now() - at) / 1000)
+  if (s < 5) return 'just now'
+  if (s < 60) return `${s}s ago`
+  const m = Math.floor(s / 60)
+  if (m < 60) return `${m}m ago`
+  const h = Math.floor(m / 60)
+  if (h < 24) return `${h}h ago`
+  return `${Math.floor(h / 24)}d ago`
+}
+
+function loadProgress(id) {
+  try {
+    return JSON.parse(localStorage.getItem(storeKey(id))) || {}
+  } catch {
+    return {}
+  }
+}
+
+function initialSubject() {
+  try {
+    const last = localStorage.getItem(LAST_KEY)
+    if (last && SUBJECTS[last]) return last
+  } catch {
+    /* ignore */
+  }
+  return SUBJECT_ORDER[0]
+}
+
+function initialAccess() {
+  try {
+    if (localStorage.getItem(AUTH_KEY) === 'ok') return 'full'
+  } catch {
+    /* ignore */
+  }
+  return 'locked' // 'locked' | 'full' | 'demo'
+}
+
+export default function App() {
+  const [access, setAccess] = useState(initialAccess)
+  const [subjectId, setSubjectId] = useState(initialSubject)
+  const [progress, setProgress] = useState(() => loadProgress(initialSubject()))
+  const [view, setView] = useState('topics') // 'topics' | 'study'
+  const [hideHT, setHideHT] = useState(false)
+  const [hideOnly, setHideOnly] = useState(false)
+  const [mode, setMode] = useState('all')
+  const [session, setSession] = useState({ topicCode: null, cards: [], index: 0 })
+  const [flipped, setFlipped] = useState(false)
+  const [toast, setToast] = useState(null)
+  const [deckDone, setDeckDone] = useState(null) // { count } while the celebration shows
+  const celebratedRef = useRef(false) // guard: celebrate a deck only once per session
+  const syncedRef = useRef(false) // true once the initial cloud→local sync has finished
+  const [syncState, setSyncState] = useState({ status: 'idle', at: null }) // 'idle'|'saving'|'saved'|'error'
+  const [nowTick, setNowTick] = useState(0) // ticks so the "saved 2m ago" label stays fresh
+  const [user, setUser] = useState(null) // Supabase auth user (null if not logged in)
+  const [paid, setPaid] = useState(false) // has this user paid for access?
+  const [checkingPaid, setCheckingPaid] = useState(false)
+  const [recovery, setRecovery] = useState(false) // password-reset flow in progress
+
+  const [paywallOpen, setPaywallOpen] = useState(true) // dismissible paywall popup
+  const [contactOpen, setContactOpen] = useState(false) // contact popup
+  const [welcome, setWelcome] = useState(null) // { name, quote } shown right after login
+  const [adminOpen, setAdminOpen] = useState(true) // owner sees the dashboard first
+  const [contentMode, setContentMode] = useState('cards') // 'cards' | 'exam'
+  const [profileOpen, setProfileOpen] = useState(false)
+  const [shopOpen, setShopOpen] = useState(false)
+  const [leaderboardOpen, setLeaderboardOpen] = useState(false)
+  const [gameTick, setGameTick] = useState(0)
+  const [theme, setTheme] = useState(() => getSetting('theme') || 'light')
+  const [custom, setCustom] = useState(() => loadCustom(initialSubject()))
+  const [mineOnly, setMineOnly] = useState(false) // show only the user's own cards
+  const [showAuth, setShowAuth] = useState(false) // landing → auth
+  const [guestName, setGuestName] = useState(() => {
+    try {
+      return localStorage.getItem('gradelab-guest-name') || ''
+    } catch {
+      return ''
+    }
+  })
+
+  // Owner accounts always have access; so do anyone who has paid.
+  const isOwner = !!user && OWNER_EMAILS.map((e) => e.toLowerCase()).includes((user.email || '').toLowerCase())
+  const displayName = (() => {
+    if (user) {
+      // A name the user set themselves (user_metadata) wins; then any hardcoded
+      // override; then the email as a last resort.
+      const o = NAME_OVERRIDES[(user.email || '').toLowerCase()]
+      const fn = user.user_metadata?.first_name || o?.first
+      const ln = user.user_metadata?.last_name ?? o?.last
+      if (fn) return `${fn}${ln ? ' ' + ln : ''}`
+      return user.email
+    }
+    if (guestName.trim()) return guestName.trim()
+    return access === 'demo' ? 'Guest' : 'You'
+  })()
+  const hasAccess = paid || isOwner
+  // Read-only when browsing without access — either a demo guest or a logged-in unpaid user.
+  const readOnly = !hasAccess && (!!user || access === 'demo')
+
+  const subject = SUBJECTS[subjectId]
+  const allCards = useMemo(() => [...flattenCards(subject), ...customToCards(custom)], [subject, custom])
+  const hasHT = useMemo(() => allCards.some((c) => c.tier.includes('HT')), [allCards])
+  const hasOnly = useMemo(
+    () => allCards.some((c) => c.tier.includes(subject.onlyCode)),
+    [allCards, subject],
+  )
+
+  const visibleByTier = useCallback(
+    (card) => {
+      if (hideHT && card.tier.includes('HT')) return false
+      if (hideOnly && card.tier.includes(subject.onlyCode)) return false
+      return true
+    },
+    [hideHT, hideOnly, subject],
+  )
+
+  // Reflect the chosen display theme on the root element.
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme)
+    setSetting('theme', theme)
+  }, [theme])
+  const toggleTheme = useCallback(() => setTheme((t) => (t === 'dark' ? 'light' : 'dark')), [])
+
+  // Reflect the active subject on the root element so CSS can theme the accent.
+  useEffect(() => {
+    document.documentElement.setAttribute('data-subject', subjectId)
+    try {
+      localStorage.setItem(LAST_KEY, subjectId)
+    } catch {
+      /* ignore */
+    }
+  }, [subjectId])
+
+  // Persist progress whenever it changes (never in read-only demo mode).
+  useEffect(() => {
+    if (readOnly) return
+    try {
+      localStorage.setItem(storeKey(subjectId), JSON.stringify(progress))
+    } catch {
+      /* ignore */
+    }
+  }, [progress, subjectId, readOnly])
+
+  const showToast = useCallback((msg) => {
+    setToast({ msg, at: Date.now() })
+  }, [])
+
+  // Called when the user finishes a whole deck. Shows the cinematic celebration
+  // (once per session) unless they've turned it off — otherwise a quiet toast.
+  const finishDeck = useCallback(
+    (count) => {
+      if (celebratedRef.current) return
+      celebratedRef.current = true
+      if (getSetting('deckCelebration')) {
+        setDeckDone({ count })
+      } else {
+        showToast('Deck complete 🎉')
+      }
+    },
+    [showToast],
+  )
+
+  // Merge a user's cloud progress with whatever is in this browser, then keep the
+  // union. This runs before any upload is allowed (syncedRef), so we can never
+  // clobber saved progress with an empty/stale local copy on login.
+  const syncFromCloud = useCallback(async (u) => {
+    if (!u) return
+    const cloud = await fetchCloudProgress(u.id)
+    const local = gatherLocalProgress()
+    const cloudHas = cloud && Object.keys(cloud).length
+
+    if (cloudHas) {
+      // Union of subjects; within a subject, union of card marks (cloud wins on conflict).
+      const merged = { ...local }
+      Object.entries(cloud).forEach(([sid, obj]) => {
+        merged[sid] = { ...(local[sid] || {}), ...obj }
+      })
+      Object.entries(merged).forEach(([sid, obj]) => {
+        try {
+          localStorage.setItem(`gcse-flashcards-${sid}-v1`, JSON.stringify(obj))
+        } catch {
+          /* ignore */
+        }
+      })
+      setProgress(loadProgress(subjectId))
+      // Push the merged result back so the cloud gains any local-only marks.
+      saveCloudProgress(u.id, merged)
+      setSyncState({ status: 'saved', at: Date.now() })
+      showToast('Progress synced')
+    } else if (Object.keys(local).length) {
+      // Cloud empty but we have local progress — seed the cloud from it.
+      saveCloudProgress(u.id, local)
+      setSyncState({ status: 'saved', at: Date.now() })
+    }
+    // Only now is it safe to let the debounced uploader run.
+    syncedRef.current = true
+  }, [subjectId, showToast])
+
+  // Re-check whether the user has paid (used after returning from Stripe).
+  const refreshPaid = useCallback(async () => {
+    if (!user) return
+    setCheckingPaid(true)
+    const p = await fetchPaid(user.id)
+    setPaid(p)
+    setCheckingPaid(false)
+    if (!p) showToast('No payment found yet — it can take a few seconds.')
+  }, [user, showToast])
+
+  // Watch the Supabase auth session (only when configured).
+  useEffect(() => {
+    if (!isSupabaseConfigured) return
+    const handle = (u) => {
+      setUser(u)
+      if (u) {
+        fetchPaid(u.id).then(setPaid)
+        syncFromCloud(u)
+      } else {
+        setPaid(false)
+        syncedRef.current = false
+      }
+    }
+    supabase.auth.getSession().then(({ data }) => handle(data.session?.user ?? null))
+    const { data: sub } = supabase.auth.onAuthStateChange((event, sess) => {
+      if (event === 'PASSWORD_RECOVERY') setRecovery(true)
+      if (event === 'SIGNED_IN' && sess?.user) {
+        const u = sess.user
+        let seen = null
+        try { seen = sessionStorage.getItem('gl-welcomed') } catch { /* ignore */ }
+        if (seen !== u.id) {
+          try { sessionStorage.setItem('gl-welcomed', u.id) } catch { /* ignore */ }
+          const override = NAME_OVERRIDES[(u.email || '').toLowerCase()]
+          const first = override?.first || u.user_metadata?.first_name || (u.email ? u.email.split('@')[0] : '')
+          setWelcome({ name: first, quote: randomQuote() })
+        }
+      }
+      handle(sess?.user ?? null)
+    })
+    return () => sub.subscription.unsubscribe()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // Upload the current progress to the cloud and report the outcome so the UI can
+  // show a live "Saved" status. Returns the save result.
+  const pushProgress = useCallback(async () => {
+    if (!isSupabaseConfigured || !user || readOnly) return { ok: false }
+    const local = gatherLocalProgress()
+    if (!Object.keys(local).length) return { ok: false, empty: true }
+    setSyncState((s) => ({ status: 'saving', at: s.at }))
+    const res = await saveCloudProgress(user.id, local)
+    if (res && res.ok) setSyncState({ status: 'saved', at: Date.now() })
+    else if (res && res.error) setSyncState((s) => ({ status: 'error', at: s.at }))
+    return res || { ok: false }
+  }, [user, readOnly])
+
+  // Manual "Back up now" — force an immediate upload.
+  const backupNow = useCallback(async () => {
+    const res = await pushProgress()
+    if (res.ok) showToast('Progress backed up ✓')
+    else if (res.empty) showToast('Nothing to back up yet — study a few cards first.')
+    else showToast('Backup failed — check your connection and try again.')
+  }, [pushProgress, showToast])
+
+  // Debounced push of all progress to the cloud whenever it changes (only if logged in).
+  useEffect(() => {
+    if (!isSupabaseConfigured || !user || readOnly) return
+    // Never upload before the initial download/merge has run — that would wipe
+    // saved progress with an empty/stale local copy.
+    if (!syncedRef.current) return
+    if (!Object.keys(gatherLocalProgress()).length) return
+    const t = setTimeout(() => pushProgress(), 800)
+    return () => clearTimeout(t)
+  }, [progress, subjectId, user, readOnly, pushProgress])
+
+  // Keep the "saved 2m ago" label fresh.
+  useEffect(() => {
+    const id = setInterval(() => setNowTick((t) => t + 1), 30000)
+    return () => clearInterval(id)
+  }, [])
+
+  const unlock = useCallback(() => {
+    try {
+      localStorage.setItem(AUTH_KEY, 'ok')
+    } catch {
+      /* ignore */
+    }
+    setAccess('full')
+  }, [])
+  const enterDemo = useCallback(() => {
+    setWelcome({ name: 'Guest', quote: randomQuote() })
+    setAccess('demo')
+  }, [])
+  const signOut = useCallback(async () => {
+    if (isSupabaseConfigured) {
+      try {
+        await supabase.auth.signOut()
+      } catch {
+        /* ignore */
+      }
+      setUser(null)
+      setPaid(false)
+    }
+    try { sessionStorage.removeItem('gl-welcomed') } catch { /* ignore */ }
+    try {
+      localStorage.removeItem(AUTH_KEY)
+    } catch {
+      /* ignore */
+    }
+    setAccess('locked')
+  }, [])
+
+  // Self-service account deletion. On success we sign the user out (which returns
+  // them to the landing page). Returns { ok, error } so the modal can show errors.
+  const handleDeleteAccount = useCallback(async () => {
+    const res = await deleteOwnAccount()
+    if (res.ok) {
+      setProfileOpen(false)
+      await signOut()
+      showToast('Your account has been deleted.')
+    }
+    return res
+  }, [signOut, showToast])
+
+  const switchSubject = useCallback((id) => {
+    if (!SUBJECTS[id]) return
+    setSubjectId(id)
+    setProgress(loadProgress(id))
+    setCustom(loadCustom(id))
+    setView('topics')
+    setHideHT(false)
+    setHideOnly(false)
+    setMode('all')
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }, [])
+
+  const collectCards = useCallback(
+    (topicCode) =>
+      allCards.filter(
+        (c) =>
+          (topicCode === 'ALL' || c.code === topicCode) &&
+          visibleByTier(c) &&
+          (!mineOnly || c.custom),
+      ),
+    [allCards, visibleByTier, mineOnly],
+  )
+
+  const applyMode = useCallback(
+    (list, m) => {
+      if (m === 'all') return list
+      return list.filter((c) => {
+        const st = progress[c.id]
+        if (m === 'learning') return st !== 'known'
+        if (m === 'unseen') return !st
+        if (m === 'known') return st === 'known'
+        return true
+      })
+    },
+    [progress],
+  )
+
+  const startSession = useCallback(
+    (topicCode) => {
+      const cards = applyMode(collectCards(topicCode), mode)
+      celebratedRef.current = false
+      setSession({ topicCode, cards, index: 0 })
+      setFlipped(false)
+      setView('study')
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    },
+    [applyMode, collectCards, mode],
+  )
+
+  const goTopics = useCallback(() => setView('topics'), [])
+
+  const next = useCallback(() => {
+    setSession((s) => {
+      if (s.index < s.cards.length - 1) {
+        setFlipped(false)
+        return { ...s, index: s.index + 1 }
+      }
+      if (s.cards.length > 0) finishDeck(s.cards.length)
+      return s
+    })
+  }, [finishDeck])
+
+  const prev = useCallback(() => {
+    setSession((s) => {
+      if (s.index > 0) {
+        setFlipped(false)
+        return { ...s, index: s.index - 1 }
+      }
+      return s
+    })
+  }, [])
+
+  const mark = useCallback(
+    (status) => {
+      if (readOnly) {
+        showToast('Demo mode — unlock to save your progress')
+        return
+      }
+      setSession((s) => {
+        const card = s.cards[s.index]
+        if (!card) return s
+        const nextProgress = { ...progress, [card.id]: status }
+        setProgress(nextProgress)
+
+        if (mode !== 'all') {
+          // Rebuild the filtered list, trying to keep our place.
+          const base = allCards.filter(
+            (c) => (s.topicCode === 'ALL' || c.code === s.topicCode) && visibleByTier(c),
+          )
+          const rebuilt = base.filter((c) => {
+            const st = nextProgress[c.id]
+            if (mode === 'learning') return st !== 'known'
+            if (mode === 'unseen') return !st
+            if (mode === 'known') return st === 'known'
+            return true
+          })
+          if (rebuilt.length === 0) {
+            finishDeck(base.length)
+            return { ...s, cards: [], index: 0 }
+          }
+          let idx = rebuilt.findIndex((c) => c.id === card.id)
+          if (idx === -1) idx = Math.min(s.index, rebuilt.length - 1)
+          setFlipped(false)
+          return { ...s, cards: rebuilt, index: idx }
+        }
+
+        if (s.index < s.cards.length - 1) {
+          setFlipped(false)
+          return { ...s, index: s.index + 1 }
+        }
+        finishDeck(s.cards.length)
+        return s
+      })
+    },
+    [allCards, mode, progress, showToast, visibleByTier, readOnly, finishDeck],
+  )
+
+  const shuffle = useCallback(() => {
+    setSession((s) => {
+      const cards = [...s.cards]
+      for (let i = cards.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1))
+        ;[cards[i], cards[j]] = [cards[j], cards[i]]
+      }
+      return { ...s, cards, index: 0 }
+    })
+    setFlipped(false)
+    showToast('Shuffled')
+  }, [showToast])
+
+  const changeMode = useCallback(
+    (m) => {
+      setMode(m)
+      setSession((s) => ({
+        ...s,
+        cards: (() => {
+          const base = allCards.filter(
+            (c) => (s.topicCode === 'ALL' || c.code === s.topicCode) && visibleByTier(c),
+          )
+          if (m === 'all') return base
+          return base.filter((c) => {
+            const st = progress[c.id]
+            if (m === 'learning') return st !== 'known'
+            if (m === 'unseen') return !st
+            if (m === 'known') return st === 'known'
+            return true
+          })
+        })(),
+        index: 0,
+      }))
+      setFlipped(false)
+    },
+    [allCards, progress, visibleByTier],
+  )
+
+  const resetSubject = useCallback(() => {
+    if (
+      window.confirm(
+        `Reset your progress for ${subject.name}? This clears every mark for this subject only.`,
+      )
+    ) {
+      setProgress({})
+      showToast(`${subject.name} progress reset`)
+    }
+  }, [subject, showToast])
+
+  const addCustomCard = useCallback((q, a, code, topicName) => {
+    const question = (q || '').trim()
+    const answer = (a || '').trim()
+    if (!question || !answer) return
+    const card = {
+      id: `MINE|${Date.now()}-${Math.round(Math.random() * 1e6)}`,
+      q: question,
+      a: answer,
+      code: code || 'MINE',
+      topicName: topicName || 'My flashcards',
+    }
+    setCustom((cur) => {
+      const next = [...cur, card]
+      saveCustom(subjectId, next)
+      return next
+    })
+    showToast('Card added')
+  }, [subjectId, showToast])
+
+  // Let the user rename themselves. Logged-in users save to their Supabase
+  // account (syncs across devices); guests save to this browser.
+  const saveName = useCallback(
+    async (raw) => {
+      const name = (raw || '').trim().slice(0, 40)
+      if (!name) return
+      if (user && isSupabaseConfigured) {
+        const [first, ...rest] = name.split(/\s+/)
+        const last = rest.join(' ')
+        const { data, error } = await supabase.auth.updateUser({
+          data: { first_name: first, last_name: last },
+        })
+        if (error) {
+          showToast('Could not update name — try again.')
+          return
+        }
+        if (data?.user) setUser(data.user)
+      } else {
+        setGuestName(name)
+        try {
+          localStorage.setItem('gradelab-guest-name', name)
+        } catch {
+          /* ignore */
+        }
+      }
+      showToast('Name updated ✓')
+    },
+    [user, showToast],
+  )
+
+  const promptUnlock = useCallback(() => {
+    if (user) {
+      setPaywallOpen(true)
+    } else {
+      setAccess('locked')
+      setShowAuth(true)
+    }
+  }, [user])
+
+  const removeCustomCard = useCallback((id) => {
+    setCustom((cur) => {
+      const next = cur.filter((c) => c.id !== id)
+      saveCustom(subjectId, next)
+      return next
+    })
+  }, [subjectId])
+
+  const copyEmail = useCallback(async () => {
+    try {
+      await navigator.clipboard.writeText(SUPPORT_EMAIL)
+      showToast('Email address copied')
+    } catch {
+      window.prompt('Copy our contact email:', SUPPORT_EMAIL)
+    }
+  }, [showToast])
+
+  // Keyboard shortcuts while studying.
+  useEffect(() => {
+    if (view !== 'study') return
+    const onKey = (e) => {
+      if (e.target && e.target.tagName === 'SELECT') return
+      switch (e.key) {
+        case ' ':
+        case 'Enter':
+          e.preventDefault()
+          setFlipped((f) => !f)
+          break
+        case 'ArrowRight':
+          e.preventDefault()
+          next()
+          break
+        case 'ArrowLeft':
+          e.preventDefault()
+          prev()
+          break
+        case 'k':
+        case 'K':
+          mark('known')
+          break
+        case 'j':
+        case 'J':
+          mark('learning')
+          break
+        default:
+          break
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [view, next, prev, mark])
+
+  // Overall stats for the visible cards.
+  const stats = useMemo(() => {
+    const vis = allCards.filter(visibleByTier)
+    let known = 0
+    let learning = 0
+    vis.forEach((c) => {
+      if (progress[c.id] === 'known') known++
+      else if (progress[c.id] === 'learning') learning++
+    })
+    const total = vis.length
+    return { known, learning, unseen: total - known - learning, total, pct: total ? Math.round((known / total) * 100) : 0 }
+  }, [allCards, progress, visibleByTier])
+
+  // Live "saved" label for the footer (nowTick keeps it fresh).
+  const syncLabel = useMemo(() => {
+    void nowTick
+    if (syncState.status === 'saving') return 'Saving…'
+    if (syncState.status === 'error') return '⚠ Save failed — tap Back up now'
+    if (syncState.at) return `✓ Saved ${relTime(syncState.at)}`
+    return 'Progress syncs to your account'
+  }, [syncState, nowTick])
+
+  // Gamification: recompute whenever progress, the active subject, custom cards
+  // or a manual tick (shop purchase / finished quiz) changes.
+  const refreshGame = useCallback(() => setGameTick((t) => t + 1), [])
+  const game = useMemo(() => computeGame(), [progress, subjectId, custom, gameTick])
+  const headerGame = useMemo(
+    () => ({
+      level: game.level,
+      balance: game.balance,
+      avatar: equippedAvatar(game.game),
+      currencyIcon: CURRENCY.icon,
+    }),
+    [game],
+  )
+
+  // Push the player's score to the global leaderboard (debounced) when signed in.
+  useEffect(() => {
+    if (!isSupabaseConfigured || !user) return
+    const t = setTimeout(() => {
+      upsertLeaderboard({
+        id: user.id,
+        name: displayName,
+        xp: game.xp,
+        level: game.level,
+        rank: game.rank.name,
+      })
+    }, 1200)
+    return () => clearTimeout(t)
+  }, [user, game.xp, game.level, displayName])
+
+  if (isSupabaseConfigured) {
+    if (recovery) {
+      return <AuthGate recovery onRecovered={() => setRecovery(false)} />
+    }
+    if (!user && access !== 'demo') {
+      if (!showAuth) {
+        return <Landing onStart={() => setShowAuth(true)} onDemo={enterDemo} />
+      }
+      return <AuthGate onDemo={enterDemo} onBack={() => setShowAuth(false)} />
+    }
+  } else if (access === 'locked') {
+    return <Gate onUnlock={unlock} onDemo={enterDemo} />
+  }
+
+  if (shopOpen) {
+    return <Shop onExit={() => setShopOpen(false)} onChange={refreshGame} />
+  }
+
+  if (leaderboardOpen) {
+    return <Leaderboard user={user} displayName={displayName} onExit={() => setLeaderboardOpen(false)} />
+  }
+
+  if (profileOpen) {
+    return (
+      <Profile
+        name={displayName}
+        email={user ? user.email : null}
+        onExit={() => setProfileOpen(false)}
+        onOpenShop={() => setShopOpen(true)}
+        onOpenLeaderboard={() => setLeaderboardOpen(true)}
+        onSaveName={saveName}
+        onDeleteAccount={user ? handleDeleteAccount : null}
+      />
+    )
+  }
+
+  // The owner account is for watching, not answering — show the dashboard.
+  if (user && isOwner && adminOpen) {
+    return (
+      <>
+        <AdminDashboard user={user} onExit={() => setAdminOpen(false)} />
+        <AnimatePresence>
+          {welcome && (
+            <WelcomeSplash name={welcome.name} quote={welcome.quote} onDone={() => setWelcome(null)} />
+          )}
+        </AnimatePresence>
+      </>
+    )
+  }
+
+  return (
+    <div className="app">
+      <div className="bg-glow" aria-hidden="true" />
+      <div className="bg-noise" aria-hidden="true" />
+
+      {readOnly && (
+        <div className="demo-banner">
+          <span>
+            {user
+              ? "🔒 You don’t have full access — browse freely, but progress won’t save."
+              : "👀 Demo mode — browse freely, but progress won’t save."}
+          </span>
+          <button
+            className="demo-signin"
+            onClick={user ? () => setPaywallOpen(true) : signOut}
+          >
+            {user ? 'Unlock' : 'Sign in'}
+          </button>
+        </div>
+      )}
+
+      <Header
+        subject={subject}
+        subjectOrder={SUBJECT_ORDER}
+        subjects={SUBJECTS}
+        onSwitch={switchSubject}
+        stats={stats}
+        deckCount={stats.total}
+        onProfile={() => setProfileOpen(true)}
+        profileName={displayName}
+        game={headerGame}
+        theme={theme}
+        onToggleTheme={toggleTheme}
+      />
+
+      <main className="main">
+        {view === 'topics' && (
+          <div className="mode-switch" role="tablist">
+            <button
+              className={'mode-tab' + (contentMode === 'cards' ? ' active' : '')}
+              onClick={() => setContentMode('cards')}
+            >
+              🎴 Flashcards
+            </button>
+            <button
+              className={'mode-tab' + (contentMode === 'exam' ? ' active' : '')}
+              onClick={() => setContentMode('exam')}
+            >
+              📝 Exam questions
+            </button>
+            <button
+              className={'mode-tab' + (contentMode === 'quiz' ? ' active' : '')}
+              onClick={() => setContentMode('quiz')}
+            >
+              🧠 Quiz
+            </button>
+          </div>
+        )}
+
+        {contentMode === 'exam' ? (
+          hasQuestions(subjectId) ? (
+            <QuestionsView subjectId={subjectId} />
+          ) : (
+            <p className="admin-empty">
+              Exam questions for {subject.name} are coming soon — they’re being added subject by subject.
+            </p>
+          )
+        ) : contentMode === 'quiz' ? (
+          <QuizView
+            subject={subject}
+            cards={allCards}
+            locked={readOnly}
+            onUnlock={promptUnlock}
+            onComplete={(correct, total) => {
+              if (readOnly) return
+              recordQuiz(correct, total)
+              refreshGame()
+            }}
+          />
+        ) : (
+        <AnimatePresence mode="wait">
+          {view === 'topics' ? (
+            <motion.div
+              key="topics"
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.28, ease: [0.2, 0.7, 0.2, 1] }}
+            >
+              <TopicsView
+                subject={subject}
+                progress={progress}
+                visibleByTier={visibleByTier}
+                hasHT={hasHT}
+                hasOnly={hasOnly}
+                hideHT={hideHT}
+                hideOnly={hideOnly}
+                setHideHT={setHideHT}
+                setHideOnly={setHideOnly}
+                onStudyTopic={startSession}
+                onStudyAll={() => startSession('ALL')}
+                custom={custom}
+                onAddCustom={addCustomCard}
+                onRemoveCustom={removeCustomCard}
+                mineOnly={mineOnly}
+                setMineOnly={setMineOnly}
+              />
+            </motion.div>
+          ) : (
+            <motion.div
+              key="study"
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.28, ease: [0.2, 0.7, 0.2, 1] }}
+            >
+              <StudyView
+                subject={subject}
+                session={session}
+                progress={progress}
+                flipped={flipped}
+                setFlipped={setFlipped}
+                mode={mode}
+                onChangeMode={changeMode}
+                onBack={goTopics}
+                onNext={next}
+                onPrev={prev}
+                onMark={mark}
+                onShuffle={shuffle}
+                locked={readOnly}
+                onUnlock={promptUnlock}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
+        )}
+      </main>
+
+      <footer className="footer">
+        {readOnly ? (
+          <>
+            <span>Demo mode — progress is not saved.</span>
+            <span className="footer-actions">
+              <button className="link-btn" onClick={() => setContactOpen(true)}>Contact</button>
+              <button className="link-btn" onClick={signOut}>
+                Unlock full access
+              </button>
+            </span>
+          </>
+        ) : (
+          <>
+            <span>
+              {user ? (
+                <>
+                  Signed in as {user.email}{isOwner ? ' (owner)' : ''}
+                  <span className="dotsep"> · </span>
+                  <span className={'sync-status ' + syncState.status}>{syncLabel}</span>
+                </>
+              ) : (
+                'Progress saves automatically in this browser, per subject.'
+              )}
+            </span>
+            <span className="footer-actions">
+              <button className="link-btn" onClick={() => setContactOpen(true)}>Contact</button>
+              {user && (
+                <button className="link-btn" onClick={backupNow} disabled={syncState.status === 'saving'}>
+                  {syncState.status === 'saving' ? '⟳ Backing up…' : '⟳ Back up now'}
+                </button>
+              )}
+              {user && isOwner && (
+                <button className="link-btn" onClick={() => setAdminOpen(true)}>🛠 Dashboard</button>
+              )}
+              {user && !isOwner && STRIPE_PORTAL_LINK && (
+                <a className="link-btn" href={STRIPE_PORTAL_LINK} target="_blank" rel="noreferrer">
+                  Manage subscription
+                </a>
+              )}
+              <button className="link-btn" onClick={resetSubject}>
+                Reset this subject
+              </button>
+              <button className="link-btn" onClick={signOut}>
+                {user ? 'Sign out' : 'Lock'}
+              </button>
+            </span>
+          </>
+        )}
+      </footer>
+
+      <AnimatePresence>
+        {isSupabaseConfigured && user && !hasAccess && paywallOpen && (
+          <Paywall
+            email={user.email}
+            onClose={() => setPaywallOpen(false)}
+            onRefresh={refreshPaid}
+            onSignOut={signOut}
+            refreshing={checkingPaid}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {contactOpen && (
+          <motion.div
+            className="modal-overlay"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setContactOpen(false)}
+          >
+            <motion.div
+              className="modal-card"
+              initial={{ opacity: 0, y: 20, scale: 0.97 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 10, scale: 0.98 }}
+              transition={{ duration: 0.3, ease: [0.2, 0.7, 0.2, 1] }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                className="modal-close"
+                onClick={() => setContactOpen(false)}
+                aria-label="Close"
+              >
+                ✕
+              </button>
+              <h2 style={{ marginTop: 0 }}>Get in touch</h2>
+              <p>Questions, access issues or feedback? Email us and we'll get back to you.</p>
+              <p className="contact-email">{SUPPORT_EMAIL}</p>
+              <div className="contact-actions">
+                <button className="btn primary" onClick={copyEmail}>
+                  Copy email
+                </button>
+                <a
+                  className="btn"
+                  href={`https://mail.google.com/mail/?view=cm&fs=1&to=${SUPPORT_EMAIL}`}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Open in Gmail
+                </a>
+                <a className="btn" href={`mailto:${SUPPORT_EMAIL}`}>
+                  Use mail app
+                </a>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {welcome && (
+          <WelcomeSplash
+            name={welcome.name}
+            quote={welcome.quote}
+            onDone={() => setWelcome(null)}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {deckDone && (
+          <DeckComplete count={deckDone.count} onClose={() => setDeckDone(null)} />
+        )}
+      </AnimatePresence>
+
+      <Toast toast={toast} />
+    </div>
+  )
+}
