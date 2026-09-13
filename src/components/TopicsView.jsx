@@ -3,11 +3,11 @@ import { AnimatePresence, motion } from 'framer-motion'
 
 const container = {
   hidden: {},
-  show: { transition: { staggerChildren: 0.04, delayChildren: 0.03 } },
+  show: { transition: { staggerChildren: 0.025, delayChildren: 0.02 } },
 }
 const item = {
-  hidden: { opacity: 0, y: 16 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.38, ease: [0.2, 0.7, 0.2, 1] } },
+  hidden: { opacity: 0, y: 6 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.22, ease: [0.32, 0.72, 0, 1] } },
 }
 
 // The "＋" tile shown at the end of each section's grid.
@@ -16,7 +16,7 @@ function AddTile({ onClick }) {
     <motion.button
       className="topic-card add-tile"
       variants={item}
-      whileHover={{ y: -5 }}
+      whileHover={{ y: -2 }}
       whileTap={{ scale: 0.985 }}
       onClick={onClick}
     >
@@ -119,7 +119,7 @@ function TopicCard({ subject, topic, progress, visibleByTier, onStudyTopic }) {
     <motion.button
       className="topic-card"
       variants={item}
-      whileHover={{ y: -5 }}
+      whileHover={{ y: -2 }}
       whileTap={{ scale: 0.985 }}
       onClick={() => onStudyTopic(topic.code)}
     >
@@ -248,7 +248,7 @@ export default function TopicsView({
                   key={g.code}
                   className="topic-card"
                   variants={item}
-                  whileHover={{ y: -5 }}
+                  whileHover={{ y: -2 }}
                   whileTap={{ scale: 0.985 }}
                   onClick={() => onStudyTopic(g.code)}
                 >
