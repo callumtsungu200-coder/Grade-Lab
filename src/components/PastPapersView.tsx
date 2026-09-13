@@ -3,6 +3,7 @@ import type { FormEvent } from 'react'
 import type { Subject } from './Sidebar'
 import { fetchPapers, addPaper, deletePaper } from '../pastPapers'
 import type { PastPaper, Tier } from '../pastPapers'
+import PaperViewer from './PaperViewer'
 
 interface Props {
   subject: Subject
@@ -28,6 +29,7 @@ export default function PastPapersView({ subject, canPost }: Props) {
   const [tier, setTier] = useState<'all' | Tier>('all')
   const [adding, setAdding] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [viewer, setViewer] = useState<{ paper: PastPaper; kind: 'qp' | 'ms' } | null>(null)
   const [form, setForm] = useState({
     year: String(new Date().getFullYear() - 1),
     series: 'June',
@@ -226,14 +228,14 @@ export default function PastPapersView({ subject, canPost }: Props) {
                   </div>
                   <div className="paper-links">
                     {p.qp_url && (
-                      <a className="btn" href={p.qp_url} target="_blank" rel="noreferrer noopener">
-                        Question paper ↗
-                      </a>
+                      <button type="button" className="btn" onClick={() => setViewer({ paper: p, kind: 'qp' })}>
+                        Question paper
+                      </button>
                     )}
                     {p.ms_url && (
-                      <a className="btn ghost" href={p.ms_url} target="_blank" rel="noreferrer noopener">
-                        Mark scheme ↗
-                      </a>
+                      <button type="button" className="btn ghost" onClick={() => setViewer({ paper: p, kind: 'ms' })}>
+                        Mark scheme
+                      </button>
                     )}
                     {canPost && !p.seed && (
                       <button type="button" className="btn ghost paper-remove" onClick={() => remove(p)}>
@@ -246,6 +248,16 @@ export default function PastPapersView({ subject, canPost }: Props) {
             </ul>
           </section>
         ))
+      )}
+
+      {viewer && (
+        <PaperViewer
+          key={`${viewer.paper.id}:${viewer.kind}`}
+          paper={viewer.paper}
+          subjectName={subject.name}
+          initial={viewer.kind}
+          onClose={() => setViewer(null)}
+        />
       )}
     </div>
   )
