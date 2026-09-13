@@ -25,6 +25,8 @@ export interface PastPaper {
   created_at?: string
   /** true when the row only exists on this device */
   local?: boolean
+  /** true for the built-in official papers (see pastPapersSeed.ts) */
+  seed?: boolean
 }
 
 export type NewPaper = Omit<PastPaper, 'id' | 'created_at' | 'local'>
@@ -50,7 +52,11 @@ function saveLocal(list: PastPaper[]): void {
 
 function sortPapers(list: PastPaper[]): PastPaper[] {
   return [...list].sort(
-    (a, b) => b.year - a.year || a.series.localeCompare(b.series) || a.paper.localeCompare(b.paper),
+    (a, b) =>
+      b.year - a.year ||
+      a.series.localeCompare(b.series) ||
+      a.paper.localeCompare(b.paper, undefined, { numeric: true }) ||
+      a.tier.localeCompare(b.tier),
   )
 }
 
@@ -58,12 +64,25 @@ function localId(): string {
   return 'local-' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36)
 }
 
+/* The built-in official papers live in their own chunk (dynamic import) so
+   the link data only loads when someone opens the Past Papers view. */
+async function loadSeed(subject: string): Promise<PastPaper[]> {
+  try {
+    const m = await import('./pastPapersSeed')
+    return m.SEED_PAPERS.filter((p) => p.subject === subject).map((p) => ({ ...p, seed: true }))
+  } catch (e) {
+    console.warn('loadSeed failed', e)
+    return []
+  }
+}
+
 export async function fetchPapers(
   subject: string,
 ): Promise<{ data: PastPaper[]; source: 'cloud' | 'local'; error: string | null }> {
+  const seed = await loadSeed(subject)
   const local = loadLocal().filter((p) => p.subject === subject)
   if (!isSupabaseConfigured || !supabase) {
-    return { data: sortPapers(local), source: 'local', error: null }
+    return { data: sortPapers([...seed, ...local]), source: 'local', error: null }
   }
   const { data, error } = await supabase
     .from('past_papers')
@@ -72,12 +91,12 @@ export async function fetchPapers(
     .order('year', { ascending: false })
   if (error) {
     console.warn('fetchPapers error', error.message)
-    return { data: sortPapers(local), source: 'local', error: error.message }
+    return { data: sortPapers([...seed, ...local]), source: 'local', error: error.message }
   }
   const cloud: PastPaper[] = (data || []).map((r: PastPaper) => ({ ...r, tier: (r.tier || '') as Tier }))
   // Keep device-only rows visible alongside the published ones.
   const localOnly = local.filter((p) => p.local)
-  return { data: sortPapers([...cloud, ...localOnly]), source: 'cloud', error: null }
+  return { data: sortPapers([...seed, ...cloud, ...localOnly]), source: 'cloud', error: null }
 }
 
 export async function addPaper(p: NewPaper): Promise<{ data: PastPaper | null; error: string | null }> {
@@ -100,6 +119,7 @@ export async function addPaper(p: NewPaper): Promise<{ data: PastPaper | null; e
 }
 
 export async function deletePaper(p: PastPaper): Promise<{ error: string | null }> {
+  if (p.seed) return { error: 'Built-in official papers can’t be removed.' }
   if (p.local || !isSupabaseConfigured || !supabase) {
     saveLocal(loadLocal().filter((x) => x.id !== p.id))
     return { error: null }

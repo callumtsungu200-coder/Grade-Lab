@@ -110,7 +110,8 @@ export default function PastPapersView({ subject, canPost }: Props) {
         <div>
           <h2 className="papers-title">Past papers</h2>
           <p className="papers-sub">
-            {subject.name} · {board} · official question papers and mark schemes
+            {subject.name} · {board} · official question papers and mark schemes, linked straight from the
+            exam board
           </p>
         </div>
         {canPost && (
@@ -219,6 +220,7 @@ export default function PastPapersView({ subject, canPost }: Props) {
                     <span className="paper-series">
                       {p.series} {p.year}
                     </span>
+                    {p.seed && <span className="paper-official">Official</span>}
                     {p.local && <span className="paper-local">This device</span>}
                     {p.notes && <span className="paper-notes">{p.notes}</span>}
                   </div>
@@ -233,7 +235,7 @@ export default function PastPapersView({ subject, canPost }: Props) {
                         Mark scheme ↗
                       </a>
                     )}
-                    {canPost && (
+                    {canPost && !p.seed && (
                       <button type="button" className="btn ghost paper-remove" onClick={() => remove(p)}>
                         Remove
                       </button>
