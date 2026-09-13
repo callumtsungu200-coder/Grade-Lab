@@ -49,7 +49,10 @@ const BOARDS = ["AQA", "Edexcel", "OCR", "Eduqas", "WJEC"]
 const reveal = (d = 0) => ({
   initial: { opacity: 0, y: 26 },
   whileInView: { opacity: 1, y: 0 },
-  viewport: { once: true, margin: "-70px" },
+  // amount:0.1 fires as soon as 10% of the element is on screen — more
+  // forgiving than a fixed negative margin, and stops the second stock
+  // image from getting stuck invisible if the viewport isn't tall enough.
+  viewport: { once: true, amount: 0.1 },
   transition: { duration: 0.6, ease: [0.2, 0.7, 0.2, 1], delay: d },
 })
 
