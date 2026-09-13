@@ -2,45 +2,49 @@
    GCSE Flashcards — dark, bold, focused theme
    ============================================================ */
 :root {
-  /* Light theme — clean & minimal (default) */
-  --bg: #eef0f3;
-  --bg-1: #ffffff;
-  --bg-2: #e7e9ee;
-  --line: rgba(17, 18, 24, 0.13);
-  --line-2: rgba(17, 18, 24, 0.22);
-  --text: #0f1116;
-  --dim: #474d59;
-  --faint: #7b818e;
-  --known: #15803d;
-  --learning: #c2680a;
-  --unseen: #d7dae0;
-  --accent: #047857;
-  --accent-deep: #036045;
-  --on-accent: #ffffff;
-  --gold: #a16207;
-  --danger: #dc2626;
+  /* Light theme — warm & premium (default).
+     Cream & sand backgrounds, warm near-black text, burnt-amber accent,
+     rich goldenrod for currency / awards. Think editorial magazine
+     rather than SaaS dashboard. */
+  --bg: #f5efe4;              /* warm cream page */
+  --bg-1: #fbf7ef;             /* off-white surface / cards */
+  --bg-2: #ebe2d2;             /* warm beige recessed */
+  --line: rgba(60, 44, 30, 0.13);
+  --line-2: rgba(60, 44, 30, 0.22);
+  --text: #1c1610;             /* warm near-black */
+  --dim: #524941;              /* warm dark brown */
+  --faint: #8f8478;            /* warm mid-grey */
+  --known: #166534;            /* deep forest — feels grounded, not neon */
+  --learning: #b45309;         /* rich amber "in progress" */
+  --unseen: #d6ccbb;            /* neutral warm grey */
+  --accent: #b45309;           /* burnt terracotta primary */
+  --accent-deep: #7c2d12;       /* deeper cocoa on hover / press */
+  --on-accent: #fdf7ea;        /* warm off-white text on accent */
+  --gold: #a16207;             /* rich goldenrod for currency, awards */
+  --danger: #b91c1c;           /* warm brick red */
   --radius: 20px;
   --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
   --font: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   color-scheme: light;
 }
 :root[data-theme='dark'] {
-  --bg: #0d0e12;
-  --bg-1: #15171d;
-  --bg-2: #1b1e26;
-  --line: rgba(255, 255, 255, 0.08);
-  --line-2: rgba(255, 255, 255, 0.14);
-  --text: #f3f4f7;
-  --dim: #a3a4b0;
-  --faint: #6b7280;
-  --known: #3ddc84;
-  --learning: #ffb454;
-  --unseen: #2a2d36;
-  --accent: #10b981;
-  --accent-deep: #34d399;
-  --on-accent: #04241a;
-  --gold: #ffd54a;
-  --danger: #ff8787;
+  /* Warm dark — burnt umber undertones, not blue-black. */
+  --bg: #1a1511;               /* warm dark page */
+  --bg-1: #24201b;             /* warm dark surface */
+  --bg-2: #2d2822;             /* warm elevated surface */
+  --line: rgba(255, 240, 220, 0.08);
+  --line-2: rgba(255, 240, 220, 0.14);
+  --text: #f5f0e6;             /* warm off-white */
+  --dim: #b8ad9c;              /* warm dim */
+  --faint: #7d7466;            /* warm faint */
+  --known: #4ade80;
+  --learning: #fbbf24;
+  --unseen: #3a342d;
+  --accent: #f97316;           /* warm orange for dark */
+  --accent-deep: #fb923c;
+  --on-accent: #1a1511;
+  --gold: #fbbf24;
+  --danger: #f87171;
   color-scheme: dark;
 }
 
@@ -984,14 +988,18 @@ kbd {
 /* ---------- Demo banner ---------- */
 .demo-banner {
   display: flex; align-items: center; justify-content: center; gap: 14px; flex-wrap: wrap;
-  padding: 10px 18px; font-size: 0.84rem; font-weight: 600; color: var(--on-accent);
-  background: linear-gradient(90deg, var(--accent), var(--accent-deep));
+  padding: 10px 18px; font-size: 0.84rem; font-weight: 600;
+  color: var(--text);
+  background: var(--bg-2);
+  border-bottom: 1px solid var(--line);
 }
 .demo-signin {
-  cursor: pointer; font-family: inherit; font-size: 0.8rem; font-weight: 700; color: var(--on-accent);
-  background: rgba(0, 0, 0, 0.18); border: 1px solid rgba(0, 0, 0, 0.2); border-radius: 20px; padding: 4px 12px;
+  cursor: pointer; font-family: inherit; font-size: 0.8rem; font-weight: 700;
+  color: #b45309;
+  background: transparent; border: 1.5px solid #b45309; border-radius: 20px; padding: 4px 12px;
+  transition: background 0.2s var(--ease), color 0.2s var(--ease);
 }
-.demo-signin:hover { background: rgba(0, 0, 0, 0.28); }
+.demo-signin:hover { background: #b45309; color: #fdf7ea; }
 .footer-actions { display: flex; gap: 16px; }
 
 /* ---------- Responsive ---------- */
@@ -1381,16 +1389,16 @@ kbd {
    Redesigned landing — clean editorial, light/dark, real photos
    ============================================================ */
 .nland {
-  --nl-bg: #fbfbf9;
-  --nl-surface: #ffffff;
-  --nl-surface-2: #f4f4f1;
-  --nl-text: #14151a;
-  --nl-muted: #5b616e;
-  --nl-line: #e7e7e2;
-  --nl-accent: #059669;
-  --nl-accent-hover: #047857;
-  --nl-accent-ink: #ffffff;
-  --nl-shadow: 0 24px 60px rgba(20, 21, 26, 0.12);
+  --nl-bg: #f5efe4;                      /* warm cream page */
+  --nl-surface: #fbf7ef;                 /* off-white surface */
+  --nl-surface-2: #ebe2d2;                /* warm beige recessed */
+  --nl-text: #1c1610;                    /* warm near-black */
+  --nl-muted: #524941;                   /* warm dark brown */
+  --nl-line: #dcd1bd;                    /* warm hairline */
+  --nl-accent: #b45309;                  /* burnt terracotta */
+  --nl-accent-hover: #7c2d12;             /* deeper cocoa */
+  --nl-accent-ink: #fdf7ea;              /* warm off-white on accent */
+  --nl-shadow: 0 24px 60px rgba(60, 44, 30, 0.14);
   --nl-serif: "Fraunces", Georgia, "Times New Roman", serif;
   --nl-sans: "Space Grotesk", system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
 
@@ -1402,16 +1410,16 @@ kbd {
   overflow-x: hidden;
 }
 .nland[data-nl-theme="dark"] {
-  --nl-bg: #0e1014;
-  --nl-surface: #161a20;
-  --nl-surface-2: #1b2029;
-  --nl-text: #f3f5f7;
-  --nl-muted: #99a2b1;
-  --nl-line: rgba(255, 255, 255, 0.10);
-  --nl-accent: #10b981;
-  --nl-accent-hover: #34d399;
-  --nl-accent-ink: #052018;
-  --nl-shadow: 0 30px 70px rgba(0, 0, 0, 0.5);
+  --nl-bg: #1a1511;
+  --nl-surface: #24201b;
+  --nl-surface-2: #2d2822;
+  --nl-text: #f5f0e6;
+  --nl-muted: #b8ad9c;
+  --nl-line: rgba(255, 240, 220, 0.10);
+  --nl-accent: #f97316;
+  --nl-accent-hover: #fb923c;
+  --nl-accent-ink: #1a1511;
+  --nl-shadow: 0 30px 70px rgba(0, 0, 0, 0.55);
 }
 
 .nland * { box-sizing: border-box; }
