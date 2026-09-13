@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { SUBJECTS, SUBJECT_ORDER, flattenCards } from './subjects.js'
 import Sidebar from './components/Sidebar'
 import Dashboard from './components/Dashboard'
+import PastPapersView from './components/PastPapersView'
 import { logActivity } from './activity'
 import TopicsView from './components/TopicsView.jsx'
 import StudyView from './components/StudyView.jsx'
@@ -133,7 +134,12 @@ export default function App() {
   })
 
   // Owner accounts always have access; so do anyone who has paid.
-  const isOwner = !!user && OWNER_EMAILS.map((e) => e.toLowerCase()).includes((user.email || '').toLowerCase())
+  // Dev-only: `localStorage.setItem('gradelab-dev-owner', '1')` under
+  // `npm run dev` simulates the owner account (full access, owner tools)
+  // so those paths can be previewed without Supabase. Dead code in builds.
+  const devOwner = import.meta.env.DEV && localStorage.getItem('gradelab-dev-owner') === '1'
+  const isOwner =
+    (!!user && OWNER_EMAILS.map((e) => e.toLowerCase()).includes((user.email || '').toLowerCase())) || devOwner
   const displayName = (() => {
     if (user) {
       // A name the user set themselves (user_metadata) wins; then any hardcoded
@@ -861,7 +867,9 @@ export default function App() {
                   ? 'Flashcards'
                   : contentMode === 'quiz'
                     ? 'Quiz'
-                    : 'Exam Questions'}
+                    : contentMode === 'papers'
+                      ? 'Past Papers'
+                      : 'Exam Questions'}
             </span>
           </div>
         </div>
@@ -881,6 +889,8 @@ export default function App() {
             onOpenSubject={openSubject}
             onQuickAction={quickAction}
           />
+        ) : contentMode === 'papers' ? (
+          <PastPapersView subject={subject} canPost={isOwner} />
         ) : contentMode === 'exam' ? (
           hasQuestions(subjectId) ? (
             <QuestionsView subjectId={subjectId} />

@@ -14,10 +14,23 @@ export default function Flashcard({ card, flipped, onFlip, subject, locked = fal
       transition={{ duration: 0.32, ease: [0.2, 0.7, 0.2, 1] }}
     >
       <div className="card-halo" aria-hidden="true" />
-      <button
+      {/* A div, not a <button>: the locked face contains its own button and
+          buttons can't nest. Keyboard flip is handled here (Enter/Space)
+          as well as by the global Space shortcut. */}
+      <div
         className={'flashcard' + (flipped ? ' flipped' : '')}
+        role="button"
+        tabIndex={0}
         onClick={onFlip}
-        aria-label="Flashcard, click to flip"
+        onKeyDown={(e) => {
+          if (e.target !== e.currentTarget) return
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault()
+            onFlip()
+          }
+        }}
+        aria-label="Flashcard, activate to flip"
+        aria-pressed={flipped}
       >
         <div className="flashcard-inner">
           <div className="face front">
@@ -32,13 +45,18 @@ export default function Flashcard({ card, flipped, onFlip, subject, locked = fal
             <p className="face-label">Question</p>
             <p className="face-text q">{card.q}</p>
             <p className="flip-hint">
-              {answerLocked ? '🔒 Tap to reveal — answer locked' : 'Tap or press Space to flip'}
+              {answerLocked ? 'Answer locked — tap to see why' : 'Tap or press Space to flip'}
             </p>
           </div>
           <div className={'face back' + (answerLocked ? ' locked' : '')}>
             {answerLocked ? (
               <div className="lock-face" onClick={(e) => e.stopPropagation()}>
-                <span className="lock-emoji">🔒</span>
+                <span className="lock-icon" aria-hidden="true">
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="5" y="11" width="14" height="10" rx="2" />
+                    <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+                  </svg>
+                </span>
                 <p className="lock-title">Answer locked</p>
                 <p className="lock-sub">Unlock full access to reveal every answer, save your progress and use exam questions.</p>
                 <button className="btn primary lock-btn" onClick={() => onUnlock && onUnlock()}>
@@ -54,7 +72,7 @@ export default function Flashcard({ card, flipped, onFlip, subject, locked = fal
             )}
           </div>
         </div>
-      </button>
+      </div>
     </motion.div>
   )
 }

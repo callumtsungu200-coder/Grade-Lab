@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { buildQuiz, loadSeen, markSeen, clearSeen } from "../quiz.js"
 
@@ -68,10 +68,39 @@ export default function QuizView({ subject, cards, locked = false, onUnlock, onC
     }
   }
 
+  // Keyboard: 1–4 / A–D pick an option, Enter or → moves on.
+  useEffect(() => {
+    if (phase !== "run") return
+    const onKey = (e) => {
+      if (e.metaKey || e.ctrlKey || e.altKey) return
+      const q = questions[index]
+      if (!q) return
+      if (picked === null) {
+        let i = -1
+        if (/^[1-4]$/.test(e.key)) i = Number(e.key) - 1
+        else if (/^[a-dA-D]$/.test(e.key)) i = e.key.toUpperCase().charCodeAt(0) - 65
+        if (i >= 0 && i < q.options.length) {
+          e.preventDefault()
+          choose(q.options[i])
+        }
+      } else if (e.key === "Enter" || e.key === "ArrowRight") {
+        e.preventDefault()
+        next()
+      }
+    }
+    window.addEventListener("keydown", onKey)
+    return () => window.removeEventListener("keydown", onKey)
+  })
+
   if (locked) {
     return (
       <div className="quiz-lock">
-        <span className="lock-emoji">🔒</span>
+        <span className="lock-icon" aria-hidden="true">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="5" y="11" width="14" height="10" rx="2" />
+            <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+          </svg>
+        </span>
         <p className="lock-title">Quizzes are locked</p>
         <p className="lock-sub">Unlock full access to test yourself with auto-marked multiple-choice quizzes.</p>
         <button className="btn primary" onClick={() => onUnlock && onUnlock()}>Unlock full access →</button>
@@ -84,7 +113,7 @@ export default function QuizView({ subject, cards, locked = false, onUnlock, onC
     const available = poolForScope.length
     return (
       <div className="quiz-setup">
-        <h2 className="quiz-h">🧠 Quick quiz</h2>
+        <h2 className="quiz-h">Quick quiz</h2>
         <p className="quiz-sub">Multiple-choice questions, auto-marked. Pick your options and go.</p>
 
         <label className="quiz-label">Topic</label>
@@ -137,7 +166,7 @@ export default function QuizView({ subject, cards, locked = false, onUnlock, onC
     const score = answers.filter((a) => a.isRight).length
     const total = answers.length
     const pct = total ? Math.round((score / total) * 100) : 0
-    const msg = pct >= 80 ? "Excellent! 🎉" : pct >= 50 ? "Good effort — keep going!" : "Keep practising — you'll get there."
+    const msg = pct >= 80 ? "Excellent." : pct >= 50 ? "Good effort — keep going." : "Keep practising — you'll get there."
     return (
       <div className="quiz-results">
         <h2 className="quiz-h">Quiz complete</h2>
@@ -202,7 +231,8 @@ export default function QuizView({ subject, cards, locked = false, onUnlock, onC
               }
               return (
                 <button key={i} className={cls} onClick={() => choose(opt)} disabled={picked !== null}>
-                  {opt}
+                  <span className="quiz-opt-key" aria-hidden="true">{String.fromCharCode(65 + i)}</span>
+                  <span className="quiz-opt-text">{opt}</span>
                 </button>
               )
             })}

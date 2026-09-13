@@ -6,7 +6,7 @@ import SubjectIcon from './SubjectIcon'
 
 /* ---------------------------------------------------------------- Types */
 
-export type ContentMode = 'cards' | 'quiz' | 'exam'
+export type ContentMode = 'cards' | 'quiz' | 'exam' | 'papers'
 export type View = 'topics' | 'study'
 export type Page = 'dashboard' | 'subject'
 
@@ -107,10 +107,19 @@ function Ring({ pct }: { pct: number }) {
   )
 }
 
+const IconPapers = () => (
+  <svg {...svgProps}>
+    <path d="M8 3h8l4 4v10a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z" />
+    <path d="M16 3v4h4" />
+    <path d="M4 8v11a2 2 0 0 0 2 2h10" />
+  </svg>
+)
+
 const MODES: { id: ContentMode; label: string; icon: ReactNode }[] = [
   { id: 'cards', label: 'Flashcards', icon: <IconCards /> },
   { id: 'quiz', label: 'Quizzes', icon: <IconQuiz /> },
   { id: 'exam', label: 'Exam Questions', icon: <IconExam /> },
+  { id: 'papers', label: 'Past Papers', icon: <IconPapers /> },
 ]
 
 /* ------------------------------------------------------------ Component */
