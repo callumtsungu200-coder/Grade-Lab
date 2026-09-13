@@ -1758,12 +1758,16 @@ kbd {
 .sb-active-icon {
   width: 40px; height: 40px;
   display: grid; place-items: center;
-  font-size: 1.35rem;
   border-radius: 12px;
-  background: linear-gradient(150deg,
-    color-mix(in srgb, var(--accent) 24%, var(--bg-2)),
-    var(--bg-1));
-  border: 1px solid var(--line-2);
+  background: color-mix(in srgb, var(--sub-color, var(--accent)) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--sub-color, var(--accent)) 36%, transparent);
+  color: var(--sub-color, var(--accent));
+  box-shadow: 0 6px 22px color-mix(in srgb, var(--sub-color, var(--accent)) 22%, transparent);
+  transition: transform 0.28s var(--ease), box-shadow 0.28s var(--ease);
+}
+.sb-active-subject:hover .sb-active-icon {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 28px color-mix(in srgb, var(--sub-color, var(--accent)) 32%, transparent);
 }
 .sb-active-meta { min-width: 0; }
 .sb-active-name {
@@ -1851,10 +1855,24 @@ kbd {
   font-weight: 600;
   cursor: pointer;
   text-align: left;
-  transition: background 0.15s var(--ease), color 0.15s var(--ease);
+  transition:
+    background 0.22s var(--ease),
+    color 0.22s var(--ease),
+    transform 0.22s var(--ease),
+    padding-left 0.22s var(--ease);
 }
-.sb-nav-item:hover { background: var(--bg); }
-.sb-nav-item.active { color: var(--accent-deep); }
+.sb-nav-item:hover {
+  background: var(--bg);
+  padding-left: 16px;
+}
+.sb-nav-item:active { transform: scale(0.985); }
+.sb-nav-item.active { color: var(--accent-deep); padding-left: 16px; }
+.sb-nav-item .sb-nav-icon {
+  transition: transform 0.28s var(--ease);
+}
+.sb-nav-item:hover .sb-nav-icon {
+  transform: scale(1.15) rotate(-6deg);
+}
 .sb-active-pill {
   position: absolute;
   inset: 0;
@@ -1871,6 +1889,7 @@ kbd {
 /* Subjects list — scrolls if needed */
 .sb-subjects { min-height: 0; flex: 1 1 auto; overflow-y: auto; }
 .sb-subject {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -1882,21 +1901,94 @@ kbd {
   font: inherit;
   cursor: pointer;
   text-align: left;
-  transition: background 0.15s var(--ease);
+  transition:
+    background 0.22s var(--ease),
+    outline-color 0.22s var(--ease),
+    transform 0.22s var(--ease),
+    padding-left 0.22s var(--ease);
+  outline: 1px solid transparent;
 }
-.sb-subject:hover { background: var(--bg); }
+/* A little left rail that grows in on hover / active. */
+.sb-subject::before {
+  content: '';
+  position: absolute;
+  left: 4px;
+  top: 12px;
+  bottom: 12px;
+  width: 3px;
+  border-radius: 3px;
+  background: var(--sub-color, var(--accent));
+  transform: scaleY(0);
+  transform-origin: center;
+  opacity: 0;
+  transition: transform 0.28s var(--ease), opacity 0.22s var(--ease);
+}
+.sb-subject:hover {
+  background: color-mix(in srgb, var(--sub-color, var(--accent)) 9%, var(--bg));
+  padding-left: 14px;
+}
+.sb-subject:hover::before {
+  transform: scaleY(1);
+  opacity: 0.6;
+}
+.sb-subject:active { transform: scale(0.985); }
 .sb-subject.active {
-  background: color-mix(in srgb, var(--accent) 10%, transparent);
-  outline: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+  background: color-mix(in srgb, var(--sub-color, var(--accent)) 13%, transparent);
+  outline-color: color-mix(in srgb, var(--sub-color, var(--accent)) 48%, transparent);
+  padding-left: 14px;
 }
+.sb-subject.active::before {
+  transform: scaleY(1);
+  opacity: 1;
+}
+
+/* Per-subject signature colour — used for the icon tile background,
+   border and stroke, and the hover/active tint. Same palette as the
+   :root[data-subject='X'] --accent values. */
+.sb-subject[data-subj='maths'],
+.sb-active-subject[data-subj='maths']              { --sub-color: #4dabf7; }
+.sb-subject[data-subj='biology'],
+.sb-active-subject[data-subj='biology']            { --sub-color: #51cf66; }
+.sb-subject[data-subj='chemistry'],
+.sb-active-subject[data-subj='chemistry']          { --sub-color: #2bd4c0; }
+.sb-subject[data-subj='physics'],
+.sb-active-subject[data-subj='physics']            { --sub-color: #9775fa; }
+.sb-subject[data-subj='computer-science'],
+.sb-active-subject[data-subj='computer-science']   { --sub-color: #ff922b; }
+.sb-subject[data-subj='media-studies'],
+.sb-active-subject[data-subj='media-studies']      { --sub-color: #f06595; }
+.sb-subject[data-subj='history'],
+.sb-active-subject[data-subj='history']            { --sub-color: #c9a15a; }
+.sb-subject[data-subj='english-literature'],
+.sb-active-subject[data-subj='english-literature'] { --sub-color: #ff6b6b; }
+.sb-subject[data-subj='business'],
+.sb-active-subject[data-subj='business']           { --sub-color: #fab005; }
+.sb-subject[data-subj='citizenship'],
+.sb-active-subject[data-subj='citizenship']        { --sub-color: #cc5de8; }
+.sb-subject[data-subj='religious-studies'],
+.sb-active-subject[data-subj='religious-studies']  { --sub-color: #a9e34b; }
+
 .sb-subject-icon {
-  width: 28px; height: 28px;
+  width: 30px; height: 30px;
   display: grid; place-items: center;
-  font-size: 0.95rem;
-  border-radius: 8px;
-  background: var(--bg);
-  border: 1px solid var(--line);
+  border-radius: 9px;
+  color: var(--sub-color, var(--accent));
+  background: color-mix(in srgb, var(--sub-color, var(--accent)) 12%, transparent);
+  border: 1.5px solid color-mix(in srgb, var(--sub-color, var(--accent)) 32%, transparent);
   flex-shrink: 0;
+  transition:
+    transform 0.28s var(--ease),
+    box-shadow 0.28s var(--ease),
+    background 0.28s var(--ease);
+}
+.sb-subject:hover .sb-subject-icon {
+  transform: scale(1.1) rotate(-3deg);
+  background: color-mix(in srgb, var(--sub-color, var(--accent)) 22%, transparent);
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--sub-color, var(--accent)) 24%, transparent);
+}
+.sb-subject.active .sb-subject-icon {
+  background: color-mix(in srgb, var(--sub-color, var(--accent)) 22%, transparent);
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--sub-color, var(--accent)) 30%, transparent);
 }
 .sb-subject-text {
   display: flex;
@@ -1969,9 +2061,17 @@ kbd {
   font-size: 0.82rem;
   cursor: pointer;
   min-width: 0;
-  transition: border-color 0.15s var(--ease);
+  transition:
+    border-color 0.22s var(--ease),
+    transform 0.22s var(--ease),
+    box-shadow 0.22s var(--ease);
 }
-.sb-profile:hover { border-color: var(--accent); }
+.sb-profile:hover {
+  border-color: var(--accent);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--accent) 18%, transparent);
+}
+.sb-profile:active { transform: scale(0.985) translateY(0); }
 .sb-profile-av {
   width: 28px; height: 28px;
   display: grid; place-items: center;
@@ -1995,8 +2095,32 @@ kbd {
   color: var(--text);
   cursor: pointer;
   font-size: 1rem;
+  transition:
+    border-color 0.22s var(--ease),
+    transform 0.45s var(--ease),
+    background 0.22s var(--ease);
 }
-.sb-theme:hover { border-color: var(--accent); }
+.sb-theme:hover {
+  border-color: var(--accent);
+  transform: rotate(-20deg) scale(1.05);
+  background: color-mix(in srgb, var(--accent) 10%, var(--bg-1));
+}
+.sb-theme:active { transform: rotate(0deg) scale(0.94); }
+.sb-lvl,
+.sb-coin {
+  transition:
+    background 0.22s var(--ease),
+    transform 0.22s var(--ease),
+    box-shadow 0.22s var(--ease);
+}
+.sb-game:hover .sb-lvl,
+.sb-game:hover .sb-coin {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--accent) 18%, transparent);
+}
+.sb-game:hover .sb-coin {
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--gold) 30%, transparent);
+}
 
 /* ---------- Mobile drawer ---------- */
 .sb-scrim {

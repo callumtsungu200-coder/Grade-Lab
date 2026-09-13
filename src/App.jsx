@@ -798,7 +798,7 @@ export default function App() {
             <span /><span /><span />
           </button>
           <div className="mtop-title">
-            <span className="mtop-subj">{subject.icon} {subject.name}</span>
+            <span className="mtop-subj">{subject.name}</span>
             <span className="mtop-mode">
               {contentMode === 'cards' ? 'Flashcards' : contentMode === 'quiz' ? 'Quiz' : 'Exam Questions'}
             </span>

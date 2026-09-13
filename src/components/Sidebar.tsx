@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion'
 // @ts-expect-error — Logo is an untyped JS file; migrate to TS later.
 import Logo from './Logo.jsx'
+import SubjectIcon from './SubjectIcon'
 
 /* ---------------------------------------------------------------- Types */
 
@@ -118,10 +119,10 @@ export default function Sidebar({
         </div>
 
         {/* Active subject + overall progress */}
-        <div className="sb-active-subject">
+        <div className="sb-active-subject" data-subj={subject.id}>
           <div className="sb-active-head">
             <span className="sb-active-icon" aria-hidden="true">
-              {subject.icon}
+              <SubjectIcon subject={subject.id} size={22} />
             </span>
             <div className="sb-active-meta">
               <p className="sb-active-name">{subject.name}</p>
@@ -193,13 +194,14 @@ export default function Sidebar({
                 <button
                   key={id}
                   className={'sb-subject' + (active ? ' active' : '')}
+                  data-subj={id}
                   onClick={() => {
                     onSwitch(id)
                     onClose()
                   }}
                 >
                   <span className="sb-subject-icon" aria-hidden="true">
-                    {s.icon}
+                    <SubjectIcon subject={id} size={16} />
                   </span>
                   <span className="sb-subject-text">
                     <span className="sb-subject-name">{s.name}</span>
