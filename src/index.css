@@ -2,49 +2,28 @@
    GCSE Flashcards — dark, bold, focused theme
    ============================================================ */
 :root {
-  /* Light theme — warm & premium (default).
-     Cream & sand backgrounds, warm near-black text, burnt-amber accent,
-     rich goldenrod for currency / awards. Think editorial magazine
-     rather than SaaS dashboard. */
-  --bg: #f5efe4;              /* warm cream page */
-  --bg-1: #fbf7ef;             /* off-white surface / cards */
-  --bg-2: #ebe2d2;             /* warm beige recessed */
-  --line: rgba(60, 44, 30, 0.13);
-  --line-2: rgba(60, 44, 30, 0.22);
-  --text: #1c1610;             /* warm near-black */
-  --dim: #524941;              /* warm dark brown */
-  --faint: #8f8478;            /* warm mid-grey */
-  --known: #166534;            /* deep forest — feels grounded, not neon */
-  --learning: #b45309;         /* rich amber "in progress" */
-  --unseen: #d6ccbb;            /* neutral warm grey */
-  --accent: #b45309;           /* burnt terracotta primary */
-  --accent-deep: #7c2d12;       /* deeper cocoa on hover / press */
-  --on-accent: #fdf7ea;        /* warm off-white text on accent */
-  --gold: #a16207;             /* rich goldenrod for currency, awards */
-  --danger: #b91c1c;           /* warm brick red */
+  /* Dark-only. Crisp near-black surfaces (NOT brown — the previous warm
+     brown looked muddy), warm off-white text, rich amber-gold accent.
+     Think black tux with a gold pocket square, not milk chocolate. */
+  --bg: #0b0b0e;               /* crisp near-black page */
+  --bg-1: #14141a;             /* elevated card surface */
+  --bg-2: #1d1d25;             /* raised / hover surface */
+  --line: rgba(255, 245, 230, 0.08);
+  --line-2: rgba(255, 245, 230, 0.15);
+  --text: #f5efe4;             /* warm off-white body text */
+  --dim: #b0aa9c;              /* warm dim grey */
+  --faint: #6c6659;             /* deeper faint */
+  --known: #22c55e;            /* crisp green */
+  --learning: #f59e0b;         /* rich amber "in progress" */
+  --unseen: #24242c;            /* dark neutral */
+  --accent: #f59e0b;           /* rich amber-gold accent */
+  --accent-deep: #d97706;      /* deeper amber on hover / press */
+  --on-accent: #0b0b0e;         /* dark text on the bright accent */
+  --gold: #fbbf24;              /* bright gold for currency, awards */
+  --danger: #ef4444;            /* clean red */
   --radius: 20px;
   --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
   --font: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-  color-scheme: light;
-}
-:root[data-theme='dark'] {
-  /* Warm dark — burnt umber undertones, not blue-black. */
-  --bg: #1a1511;               /* warm dark page */
-  --bg-1: #24201b;             /* warm dark surface */
-  --bg-2: #2d2822;             /* warm elevated surface */
-  --line: rgba(255, 240, 220, 0.08);
-  --line-2: rgba(255, 240, 220, 0.14);
-  --text: #f5f0e6;             /* warm off-white */
-  --dim: #b8ad9c;              /* warm dim */
-  --faint: #7d7466;            /* warm faint */
-  --known: #4ade80;
-  --learning: #fbbf24;
-  --unseen: #3a342d;
-  --accent: #f97316;           /* warm orange for dark */
-  --accent-deep: #fb923c;
-  --on-accent: #1a1511;
-  --gold: #fbbf24;
-  --danger: #f87171;
   color-scheme: dark;
 }
 
@@ -65,7 +44,15 @@
 html, body, #root { height: 100%; }
 body {
   margin: 0;
-  background: var(--bg);
+  /* Soft warm vignettes baked into body background so they layer over the
+     solid --bg without needing a z-index. Two blooms — top-left uses the
+     primary accent (subject-tinted), bottom-right uses gold. Very subtle
+     (14% / 10% of the token). Feels like light coming through a window. */
+  background:
+    radial-gradient(1200px 800px at 12% -8%, color-mix(in srgb, var(--accent) 14%, transparent), transparent 60%),
+    radial-gradient(900px 600px at 92% 100%, color-mix(in srgb, var(--gold) 10%, transparent), transparent 55%),
+    var(--bg);
+  background-attachment: fixed, fixed, fixed;
   color: var(--text);
   font-family: var(--font);
   font-weight: 500;
@@ -73,7 +60,24 @@ body {
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
   overflow-x: hidden;
+  position: relative;
 }
+
+/* Fine paper grain — SVG turbulence inlined as a data URL (no HTTP hit).
+   Sits above everything at low opacity with `overlay` blend so it lifts
+   highlights and deepens shadows just enough to feel textural without
+   ever reading as "noisy." Not interactive (pointer-events: none). */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 999;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 240 240' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  opacity: 0.08;
+  mix-blend-mode: overlay;
+}
+
 button { font-family: inherit; }
 ::selection { background: color-mix(in srgb, var(--accent) 40%, transparent); }
 
@@ -82,7 +86,6 @@ button { font-family: inherit; }
 *::-webkit-scrollbar-thumb { background: var(--line-2); border-radius: 10px; border: 2px solid var(--bg); }
 *::-webkit-scrollbar-thumb:hover { background: var(--faint); }
 
-/* ---------- Background (minimal — no glow/noise) ---------- */
 .app { position: relative; min-height: 100%; display: flex; flex-direction: column; z-index: 0; }
 .bg-glow, .bg-noise { display: none; }
 
@@ -1389,16 +1392,16 @@ kbd {
    Redesigned landing — clean editorial, light/dark, real photos
    ============================================================ */
 .nland {
-  --nl-bg: #f5efe4;                      /* warm cream page */
-  --nl-surface: #fbf7ef;                 /* off-white surface */
-  --nl-surface-2: #ebe2d2;                /* warm beige recessed */
-  --nl-text: #1c1610;                    /* warm near-black */
-  --nl-muted: #524941;                   /* warm dark brown */
-  --nl-line: #dcd1bd;                    /* warm hairline */
-  --nl-accent: #b45309;                  /* burnt terracotta */
-  --nl-accent-hover: #7c2d12;             /* deeper cocoa */
-  --nl-accent-ink: #fdf7ea;              /* warm off-white on accent */
-  --nl-shadow: 0 24px 60px rgba(60, 44, 30, 0.14);
+  --nl-bg: #0b0b0e;
+  --nl-surface: #14141a;
+  --nl-surface-2: #1d1d25;
+  --nl-text: #f5efe4;
+  --nl-muted: #b0aa9c;
+  --nl-line: rgba(255, 245, 230, 0.10);
+  --nl-accent: #f59e0b;
+  --nl-accent-hover: #d97706;
+  --nl-accent-ink: #0b0b0e;
+  --nl-shadow: 0 30px 70px rgba(0, 0, 0, 0.55);
   --nl-serif: "Fraunces", Georgia, "Times New Roman", serif;
   --nl-sans: "Space Grotesk", system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
 
@@ -1409,18 +1412,7 @@ kbd {
   -webkit-font-smoothing: antialiased;
   overflow-x: hidden;
 }
-.nland[data-nl-theme="dark"] {
-  --nl-bg: #1a1511;
-  --nl-surface: #24201b;
-  --nl-surface-2: #2d2822;
-  --nl-text: #f5f0e6;
-  --nl-muted: #b8ad9c;
-  --nl-line: rgba(255, 240, 220, 0.10);
-  --nl-accent: #f97316;
-  --nl-accent-hover: #fb923c;
-  --nl-accent-ink: #1a1511;
-  --nl-shadow: 0 30px 70px rgba(0, 0, 0, 0.55);
-}
+/* No more .nland[data-nl-theme="dark"] override — dark IS the theme. */
 
 .nland * { box-sizing: border-box; }
 

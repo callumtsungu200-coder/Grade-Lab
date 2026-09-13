@@ -1,12 +1,8 @@
-import { useEffect, useState } from "react"
 import { motion } from "framer-motion"
 import PhoneMock from "./PhoneMock.jsx"
 import Logo from "./Logo.jsx"
 
 const Brand = () => <Logo />
-
-
-const THEME_KEY = "gradelab-landing-theme"
 
 const IconCards = (p) => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" {...p}>
@@ -28,16 +24,6 @@ const IconTrophy = (p) => (
     <path d="M7 4h10v4a5 5 0 0 1-10 0V4Z" /><path d="M7 6H4v1a3 3 0 0 0 3 3M17 6h3v1a3 3 0 0 1-3 3M9 20h6M12 15v5" />
   </svg>
 )
-const Sun = (p) => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" {...p}>
-    <circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" />
-  </svg>
-)
-const Moon = (p) => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" {...p}>
-    <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z" />
-  </svg>
-)
 
 const FEATURES = [
   { Icon: IconCards, title: "Flashcards with real depth", text: "2,800+ exam-board-specific cards, split into the same subtopics your spec uses — not vague summaries." },
@@ -57,21 +43,12 @@ const reveal = (d = 0) => ({
 })
 
 export default function Landing({ onStart, onDemo }) {
-  const [theme, setTheme] = useState(() => {
-    try { return localStorage.getItem(THEME_KEY) || "light" } catch { return "light" }
-  })
-  useEffect(() => {
-    try { localStorage.setItem(THEME_KEY, theme) } catch { /* ignore */ }
-  }, [theme])
-
+  // Dark-only — landing theme toggle retired to match the app.
   return (
-    <div className="nland" data-nl-theme={theme}>
+    <div className="nland">
       <header className="nl-nav">
         <Brand />
         <div className="nl-nav-right">
-          <button className="nl-theme" onClick={() => setTheme((t) => (t === "dark" ? "light" : "dark"))} aria-label="Toggle light or dark" title="Switch theme">
-            {theme === "dark" ? <Sun width="18" /> : <Moon width="18" />}
-          </button>
           <button className="nl-link" onClick={onStart}>Log in</button>
           <button className="nl-btn" onClick={onStart}>Get started</button>
         </div>

@@ -113,7 +113,9 @@ export default function App() {
   const [shopOpen, setShopOpen] = useState(false)
   const [leaderboardOpen, setLeaderboardOpen] = useState(false)
   const [gameTick, setGameTick] = useState(0)
-  const [theme, setTheme] = useState(() => getSetting('theme') || 'light')
+  // Dark-only — the theme picker has been retired. Left as a constant so
+  // any downstream reads of `theme` keep working without a rewrite.
+  const theme = 'dark'
   const [custom, setCustom] = useState(() => loadCustom(initialSubject()))
   const [mineOnly, setMineOnly] = useState(false) // show only the user's own cards
   const [showAuth, setShowAuth] = useState(false) // landing → auth
@@ -162,12 +164,10 @@ export default function App() {
     [hideHT, hideOnly, subject],
   )
 
-  // Reflect the chosen display theme on the root element.
+  // Dark-only: pin data-theme once. No toggle exposed.
   useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme)
-    setSetting('theme', theme)
-  }, [theme])
-  const toggleTheme = useCallback(() => setTheme((t) => (t === 'dark' ? 'light' : 'dark')), [])
+    document.documentElement.setAttribute('data-theme', 'dark')
+  }, [])
 
   // Reflect the active subject on the root element so CSS can theme the accent.
   useEffect(() => {
@@ -777,8 +777,6 @@ export default function App() {
         onProfile={() => setProfileOpen(true)}
         profileName={displayName}
         game={headerGame}
-        theme={theme}
-        onToggleTheme={toggleTheme}
         contentMode={contentMode}
         onChangeContentMode={setContentMode}
         view={view}
