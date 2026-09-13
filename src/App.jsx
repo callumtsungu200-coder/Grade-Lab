@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { SUBJECTS, SUBJECT_ORDER, flattenCards } from './subjects.js'
-import Header from './components/Header.jsx'
+import Sidebar from './components/Sidebar'
 import TopicsView from './components/TopicsView.jsx'
 import StudyView from './components/StudyView.jsx'
 import Toast from './components/Toast.jsx'
@@ -117,6 +117,7 @@ export default function App() {
   const [custom, setCustom] = useState(() => loadCustom(initialSubject()))
   const [mineOnly, setMineOnly] = useState(false) // show only the user's own cards
   const [showAuth, setShowAuth] = useState(false) // landing → auth
+  const [sidebarOpen, setSidebarOpen] = useState(false) // mobile drawer
   const [guestName, setGuestName] = useState(() => {
     try {
       return localStorage.getItem('gradelab-guest-name') || ''
@@ -765,7 +766,8 @@ export default function App() {
         </div>
       )}
 
-      <Header
+      <div className="app-shell">
+      <Sidebar
         subject={subject}
         subjectOrder={SUBJECT_ORDER}
         subjects={SUBJECTS}
@@ -777,32 +779,33 @@ export default function App() {
         game={headerGame}
         theme={theme}
         onToggleTheme={toggleTheme}
+        contentMode={contentMode}
+        onChangeContentMode={setContentMode}
+        view={view}
+        onGoTopics={goTopics}
+        open={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
       />
 
-      <main className="main">
-        {view === 'topics' && (
-          <div className="mode-switch" role="tablist">
-            <button
-              className={'mode-tab' + (contentMode === 'cards' ? ' active' : '')}
-              onClick={() => setContentMode('cards')}
-            >
-              🎴 Flashcards
-            </button>
-            <button
-              className={'mode-tab' + (contentMode === 'exam' ? ' active' : '')}
-              onClick={() => setContentMode('exam')}
-            >
-              📝 Exam questions
-            </button>
-            <button
-              className={'mode-tab' + (contentMode === 'quiz' ? ' active' : '')}
-              onClick={() => setContentMode('quiz')}
-            >
-              🧠 Quiz
-            </button>
+      <div className="app-body">
+        {/* Mobile top bar with hamburger — desktop hides via CSS */}
+        <div className="mtop">
+          <button
+            className="mtop-menu"
+            onClick={() => setSidebarOpen(true)}
+            aria-label="Open menu"
+          >
+            <span /><span /><span />
+          </button>
+          <div className="mtop-title">
+            <span className="mtop-subj">{subject.icon} {subject.name}</span>
+            <span className="mtop-mode">
+              {contentMode === 'cards' ? 'Flashcards' : contentMode === 'quiz' ? 'Quiz' : 'Exam Questions'}
+            </span>
           </div>
-        )}
+        </div>
 
+      <main className="main">
         {contentMode === 'exam' ? (
           hasQuestions(subjectId) ? (
             <QuestionsView subjectId={subjectId} />
@@ -931,6 +934,8 @@ export default function App() {
           </>
         )}
       </footer>
+      </div>
+      </div>
 
       <AnimatePresence>
         {isSupabaseConfigured && user && !hasAccess && paywallOpen && (
