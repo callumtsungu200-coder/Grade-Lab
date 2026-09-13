@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { GRADES, questionSections, questionId } from "../questions/index.js"
+import { logActivity } from "../activity"
 
 const markKey = (subjectId) => `gradelab-exam-${subjectId}-v1`
 
@@ -61,6 +62,7 @@ export default function QuestionsView({ subjectId }) {
   }, [subjectId, sectionNames])
 
   const setMark = (id, value) => {
+    logActivity({ t: "exam", s: subjectId, n: 1, k: value === "full" ? 2 : value === "part" ? 1 : 0 })
     setMarks((m) => {
       const next = { ...m, [id]: value }
       try {
