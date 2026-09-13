@@ -44,8 +44,6 @@ export interface SidebarProps {
   onProfile?: () => void
   profileName?: string
   game?: GameSummary | null
-  theme: 'light' | 'dark'
-  onToggleTheme?: () => void
   contentMode: ContentMode
   onChangeContentMode: (m: ContentMode) => void
   view: View
@@ -88,8 +86,6 @@ export default function Sidebar({
   onProfile,
   profileName,
   game,
-  theme,
-  onToggleTheme,
   contentMode,
   onChangeContentMode,
   view,
@@ -246,16 +242,6 @@ export default function Sidebar({
               >
                 <span className="sb-profile-av">{avatar || initial}</span>
                 <span className="sb-profile-label">{profileName || 'Profile'}</span>
-              </button>
-            )}
-            {onToggleTheme && (
-              <button
-                className="sb-theme"
-                onClick={onToggleTheme}
-                title="Switch light / dark"
-                aria-label="Switch light or dark"
-              >
-                {theme === 'dark' ? '☀' : '☾'}
               </button>
             )}
           </div>
