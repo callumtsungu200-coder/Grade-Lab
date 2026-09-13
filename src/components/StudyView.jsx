@@ -63,7 +63,9 @@ export default function StudyView({
 
       <div className="card-stage">
         <button className="nav-arrow" onClick={onPrev} aria-label="Previous card" disabled={!total || session.index === 0}>
-          ‹
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="m15 6-6 6 6 6" />
+          </svg>
         </button>
 
         <div className="card-slot">
@@ -86,7 +88,6 @@ export default function StudyView({
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
               >
-                <p className="empty-emoji">🎉</p>
                 <p className="empty-title">Nothing to show here</p>
                 <p className="empty-sub">No cards match this filter. Try another filter or topic.</p>
               </motion.div>
@@ -95,7 +96,9 @@ export default function StudyView({
         </div>
 
         <button className="nav-arrow" onClick={onNext} aria-label="Next card" disabled={!total || session.index >= total - 1}>
-          ›
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="m9 6 6 6-6 6" />
+          </svg>
         </button>
       </div>
 
