@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { motion } from 'framer-motion'
 // @ts-expect-error — Logo is an untyped JS file; migrate to TS later.
 import Logo from './Logo.jsx'
@@ -7,6 +8,48 @@ import SubjectIcon from './SubjectIcon'
 
 export type ContentMode = 'cards' | 'quiz' | 'exam'
 export type View = 'topics' | 'study'
+export type Page = 'dashboard' | 'subject'
+
+/* ---------------------------------------------------------- Nav icons */
+// Monochrome 16px line icons, matching SubjectIcon's stroke style.
+
+const svgProps = {
+  width: 16,
+  height: 16,
+  viewBox: '0 0 24 24',
+  fill: 'none',
+  stroke: 'currentColor',
+  strokeWidth: 1.75,
+  strokeLinecap: 'round' as const,
+  strokeLinejoin: 'round' as const,
+  'aria-hidden': true,
+}
+const IconHome = () => (
+  <svg {...svgProps}>
+    <path d="M3 11 12 4l9 7" />
+    <path d="M5 10v10h14V10" />
+    <path d="M10 20v-6h4v6" />
+  </svg>
+)
+const IconCards = () => (
+  <svg {...svgProps}>
+    <rect x="3" y="7" width="13" height="13" rx="2" />
+    <path d="M8 4h10a2 2 0 0 1 2 2v11" />
+  </svg>
+)
+const IconQuiz = () => (
+  <svg {...svgProps}>
+    <rect x="4" y="4" width="16" height="16" rx="3" />
+    <path d="m9 12 2 2 4-4" />
+  </svg>
+)
+const IconExam = () => (
+  <svg {...svgProps}>
+    <path d="M7 3h7l5 5v13H7z" />
+    <path d="M14 3v5h5" />
+    <path d="M10 13h6M10 17h6" />
+  </svg>
+)
 
 export interface Subject {
   id: string
@@ -46,6 +89,8 @@ export interface SidebarProps {
   game?: GameSummary | null
   contentMode: ContentMode
   onChangeContentMode: (m: ContentMode) => void
+  page: Page
+  onGoDashboard: () => void
   view: View
   onGoTopics: () => void
   open: boolean
@@ -62,10 +107,10 @@ function Ring({ pct }: { pct: number }) {
   )
 }
 
-const MODES: { id: ContentMode; label: string; icon: string }[] = [
-  { id: 'cards', label: 'Flashcards', icon: '🎴' },
-  { id: 'quiz', label: 'Quizzes', icon: '🧠' },
-  { id: 'exam', label: 'Exam Questions', icon: '📝' },
+const MODES: { id: ContentMode; label: string; icon: ReactNode }[] = [
+  { id: 'cards', label: 'Flashcards', icon: <IconCards /> },
+  { id: 'quiz', label: 'Quizzes', icon: <IconQuiz /> },
+  { id: 'exam', label: 'Exam Questions', icon: <IconExam /> },
 ]
 
 /* ------------------------------------------------------------ Component */
@@ -88,6 +133,8 @@ export default function Sidebar({
   game,
   contentMode,
   onChangeContentMode,
+  page,
+  onGoDashboard,
   view,
   onGoTopics,
   open,
@@ -113,6 +160,22 @@ export default function Sidebar({
             ×
           </button>
         </div>
+
+        {/* Top-level: dashboard */}
+        <nav className="sb-nav sb-top" aria-label="Main">
+          <button
+            className={'sb-nav-item' + (page === 'dashboard' ? ' active' : '')}
+            onClick={() => {
+              onGoDashboard()
+              onClose()
+            }}
+          >
+            <span className="sb-nav-icon" aria-hidden="true">
+              <IconHome />
+            </span>
+            <span className="sb-nav-label">Dashboard</span>
+          </button>
+        </nav>
 
         {/* Active subject + overall progress */}
         <div className="sb-active-subject" data-subj={subject.id}>
@@ -148,7 +211,7 @@ export default function Sidebar({
           <p className="sb-section-title">Study</p>
           <nav className="sb-nav" aria-label="Study modes">
             {MODES.map((m) => {
-              const active = contentMode === m.id
+              const active = page === 'subject' && contentMode === m.id
               return (
                 <button
                   key={m.id}

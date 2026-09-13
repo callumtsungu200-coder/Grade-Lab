@@ -2,6 +2,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { SUBJECTS, SUBJECT_ORDER, flattenCards } from './subjects.js'
 import Sidebar from './components/Sidebar'
+import Dashboard from './components/Dashboard'
+import { logActivity } from './activity'
 import TopicsView from './components/TopicsView.jsx'
 import StudyView from './components/StudyView.jsx'
 import Toast from './components/Toast.jsx'
@@ -120,6 +122,8 @@ export default function App() {
   const [mineOnly, setMineOnly] = useState(false) // show only the user's own cards
   const [showAuth, setShowAuth] = useState(false) // landing → auth
   const [sidebarOpen, setSidebarOpen] = useState(false) // mobile drawer
+  const [page, setPage] = useState('dashboard') // 'dashboard' | 'subject'
+  const [activityTick, setActivityTick] = useState(0) // bumps when the activity log changes
   const [guestName, setGuestName] = useState(() => {
     try {
       return localStorage.getItem('gradelab-guest-name') || ''
@@ -168,6 +172,21 @@ export default function App() {
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', 'dark')
   }, [])
+
+  // Mobile drawer hygiene: close on Escape, and when the viewport grows
+  // past the breakpoint (the persistent sidebar takes over there).
+  useEffect(() => {
+    if (!sidebarOpen) return
+    const onKey = (e) => { if (e.key === 'Escape') setSidebarOpen(false) }
+    const mq = window.matchMedia('(min-width: 901px)')
+    const onChange = (e) => { if (e.matches) setSidebarOpen(false) }
+    window.addEventListener('keydown', onKey)
+    mq.addEventListener('change', onChange)
+    return () => {
+      window.removeEventListener('keydown', onKey)
+      mq.removeEventListener('change', onChange)
+    }
+  }, [sidebarOpen])
 
   // Reflect the active subject on the root element so CSS can theme the accent.
   useEffect(() => {
@@ -446,6 +465,13 @@ export default function App() {
         showToast('Demo mode — unlock to save your progress')
         return
       }
+      // Log outside the state updater so StrictMode's double-invoke can't
+      // record the same mark twice.
+      const cur = session.cards[session.index]
+      if (cur) {
+        logActivity({ t: status, s: subjectId, c: cur.code })
+        setActivityTick((t) => t + 1)
+      }
       setSession((s) => {
         const card = s.cards[s.index]
         if (!card) return s
@@ -482,7 +508,7 @@ export default function App() {
         return s
       })
     },
-    [allCards, mode, progress, showToast, visibleByTier, readOnly, finishDeck],
+    [allCards, mode, progress, showToast, visibleByTier, readOnly, finishDeck, session, subjectId],
   )
 
   const shuffle = useCallback(() => {
@@ -680,6 +706,35 @@ export default function App() {
     [game],
   )
 
+  // Dashboard navigation + data. The current subject's in-memory progress
+  // is merged over the localStorage snapshot because the persist effect
+  // runs after render — without this the dashboard would lag one mark.
+  const progressBySubject = useMemo(
+    () => ({ ...gatherLocalProgress(), [subjectId]: progress }),
+    [progress, subjectId],
+  )
+  const goDashboard = useCallback(() => {
+    setPage('dashboard')
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }, [])
+  const openSubject = useCallback(
+    (id) => {
+      switchSubject(id)
+      setPage('subject')
+    },
+    [switchSubject],
+  )
+  const quickAction = useCallback(
+    (m, id) => {
+      if (id && id !== subjectId) switchSubject(id)
+      setContentMode(m)
+      if (view === 'study') setView('topics')
+      setPage('subject')
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    },
+    [switchSubject, subjectId, view],
+  )
+
   // Push the player's score to the global leaderboard (debounced) when signed in.
   useEffect(() => {
     if (!isSupabaseConfigured || !user) return
@@ -771,14 +826,16 @@ export default function App() {
         subject={subject}
         subjectOrder={SUBJECT_ORDER}
         subjects={SUBJECTS}
-        onSwitch={switchSubject}
+        onSwitch={openSubject}
         stats={stats}
         deckCount={stats.total}
         onProfile={() => setProfileOpen(true)}
         profileName={displayName}
         game={headerGame}
         contentMode={contentMode}
-        onChangeContentMode={setContentMode}
+        onChangeContentMode={(m) => quickAction(m)}
+        page={page}
+        onGoDashboard={goDashboard}
         view={view}
         onGoTopics={goTopics}
         open={sidebarOpen}
@@ -796,15 +853,35 @@ export default function App() {
             <span /><span /><span />
           </button>
           <div className="mtop-title">
-            <span className="mtop-subj">{subject.name}</span>
+            <span className="mtop-subj">{page === 'dashboard' ? 'Dashboard' : subject.name}</span>
             <span className="mtop-mode">
-              {contentMode === 'cards' ? 'Flashcards' : contentMode === 'quiz' ? 'Quiz' : 'Exam Questions'}
+              {page === 'dashboard'
+                ? 'Overview'
+                : contentMode === 'cards'
+                  ? 'Flashcards'
+                  : contentMode === 'quiz'
+                    ? 'Quiz'
+                    : 'Exam Questions'}
             </span>
           </div>
         </div>
 
       <main className="main">
-        {contentMode === 'exam' ? (
+        {page === 'dashboard' ? (
+          <Dashboard
+            displayName={displayName}
+            subjectOrder={SUBJECT_ORDER}
+            subjects={SUBJECTS}
+            progressBySubject={progressBySubject}
+            game={game}
+            currencyIcon={CURRENCY.icon}
+            currentSubjectId={subjectId}
+            readOnly={readOnly}
+            activityTick={activityTick}
+            onOpenSubject={openSubject}
+            onQuickAction={quickAction}
+          />
+        ) : contentMode === 'exam' ? (
           hasQuestions(subjectId) ? (
             <QuestionsView subjectId={subjectId} />
           ) : (
@@ -821,6 +898,8 @@ export default function App() {
             onComplete={(correct, total) => {
               if (readOnly) return
               recordQuiz(correct, total)
+              logActivity({ t: 'quiz', s: subjectId, n: total, k: correct })
+              setActivityTick((t) => t + 1)
               refreshGame()
             }}
           />
