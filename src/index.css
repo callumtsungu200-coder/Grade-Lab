@@ -2743,6 +2743,11 @@ select.pp-input { appearance: none; -webkit-appearance: none; padding-right: 30p
   color: var(--faint); background: var(--bg-2); border: 1px solid var(--line); padding: 2px 6px; border-radius: var(--radius-sm);
 }
 .paper-local { color: var(--learning); border-color: color-mix(in srgb, var(--learning) 40%, transparent); background: color-mix(in srgb, var(--learning) 10%, transparent); }
+.paper-official {
+  font-size: 10px; font-weight: var(--fw-semibold); letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent); padding: 2px 6px; border-radius: var(--radius-sm);
+}
 .paper-series { font-size: var(--fs-sm); color: var(--dim); }
 .paper-notes { font-size: var(--fs-xs); color: var(--faint); flex-basis: 100%; }
 .paper-links { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; }
