@@ -22,7 +22,7 @@ function loadTurnstile() {
   return turnstilePromise
 }
 
-export default function AuthGate({ onDemo, recovery = false, onRecovered, onBack }) {
+export default function AuthGate({ onDemo, recovery = false, onRecovered, onBack, backLabel = '← Back to home' }) {
   // modes: 'login' | 'signup' | 'reset' ; recovery prop shows the set-new-password form
   const [mode, setMode] = useState("login")
   const [email, setEmail] = useState("")
@@ -185,7 +185,7 @@ export default function AuthGate({ onDemo, recovery = false, onRecovered, onBack
         transition={{ duration: 0.4, ease: [0.2, 0.7, 0.2, 1] }}
       >
         {onBack && !recovery && (
-          <button type="button" className="gate-back" onClick={onBack}>← Back to home</button>
+          <button type="button" className="gate-back" onClick={onBack}>{backLabel}</button>
         )}
         <div className="gate-brand"><Logo className="lg" /></div>
 
@@ -289,6 +289,13 @@ export default function AuthGate({ onDemo, recovery = false, onRecovered, onBack
           </motion.button>
         </form>
 
+        {!recovery && mode === "signup" && (
+          <p className="gate-legal">
+            By creating an account you agree to the <a href="./terms.html" target="_blank" rel="noopener">Terms</a> and{" "}
+            <a href="./privacy.html" target="_blank" rel="noopener">Privacy Policy</a>.
+          </p>
+        )}
+
         {error && <p className="gate-error">{error}</p>}
         {info && <p className="gate-info">{info}</p>}
 
@@ -312,7 +319,7 @@ export default function AuthGate({ onDemo, recovery = false, onRecovered, onBack
           <>
             <p className="gate-or">or</p>
             <button className="gate-demo" onClick={onDemo}>
-              👀 Explore the free demo
+              Continue without an account
             </button>
           </>
         )}

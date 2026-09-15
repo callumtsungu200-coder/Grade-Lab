@@ -474,7 +474,7 @@ export default {
         ['What is a mutation?', 'A random change in DNA.', ''],
         ['Do most mutations affect the phenotype?', 'No — most have little or no effect.', ''],
         ['What is evolution?', 'A change in inherited characteristics of a population over time via natural selection.', ''],
-        ['State the theory of evolution.', 'All species evolved from simple life forms over three billion years ago.', ''],
+        ['State the theory of evolution.', 'All species evolved by natural selection from simple life forms that first developed over three billion years ago.', ''],
         ['Explain natural selection.', 'Organisms vary; the best-suited survive and breed, passing on their alleles.', ''],
         ['When are two populations separate species?', 'When they can no longer interbreed to produce fertile offspring.', ''],
         ['What is selective breeding?', 'Humans choosing organisms with desired traits to breed over generations.', ''],

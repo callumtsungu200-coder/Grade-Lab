@@ -162,6 +162,8 @@ export default function TopicsView({
   onStudyTopic,
   onStudyAll,
   topicFreeState, // (code) => null | 'unlocked' | 'locked'
+  dueCount = 0,
+  onReviewDue,
   custom = [],
   onAddCustom,
   onRemoveCustom,
@@ -205,6 +207,21 @@ export default function TopicsView({
 
   return (
     <section>
+      {dueCount > 0 && !mineOnly && (
+        <div className="due-bar">
+          <div className="due-bar-text">
+            <span className="due-bar-count">{dueCount}</span>
+            <span className="due-bar-copy">
+              {dueCount === 1 ? 'card is' : 'cards are'} due for review
+              <span className="due-bar-sub">Spaced repetition brings cards back just before you'd forget them.</span>
+            </span>
+          </div>
+          <button type="button" className="btn big due-bar-btn" onClick={onReviewDue}>
+            Review now
+          </button>
+        </div>
+      )}
+
       {/* My flashcards: a pressable box that expands/contracts */}
       <div className="mycards">
         <button className="mycards-toggle" onClick={() => setMyOpen((o) => !o)} aria-expanded={myOpen}>

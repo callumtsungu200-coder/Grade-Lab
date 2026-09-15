@@ -90,7 +90,6 @@ export default function QuestionsView({ subjectId, isFree = false, isUnlocked, o
     <div className="questions">
       <div className="q-banner">
         <span>Write your answer, then <strong>reveal the mark scheme</strong> and mark yourself.</span>
-        <span className="q-soon">AI auto-marking coming soon</span>
       </div>
 
       {/* Section chooser */}

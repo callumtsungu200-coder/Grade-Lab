@@ -50,7 +50,7 @@ export default function Landing({ onStart, onDemo }) {
         <Brand />
         <div className="nl-nav-right">
           <button className="nl-link" onClick={onStart}>Log in</button>
-          <button className="nl-btn" onClick={onStart}>Get started</button>
+          <button className="nl-btn" onClick={onDemo}>Start free</button>
         </div>
       </header>
 
@@ -66,13 +66,13 @@ export default function Landing({ onStart, onDemo }) {
             built around your exam board, with progress that follows you everywhere.
           </motion.p>
           <motion.div className="nl-cta" initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.19 }}>
-            <button className="nl-btn lg" onClick={onStart}>Get started free</button>
-            <button className="nl-btn ghost lg" onClick={onDemo}>Explore the demo</button>
+            <button className="nl-btn lg" onClick={onDemo}>Start revising free</button>
+            <button className="nl-btn ghost lg" onClick={onStart}>I have an account</button>
           </motion.div>
           <motion.dl className="nl-stats" initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.26 }}>
             <div><dt>11</dt><dd>subjects</dd></div>
             <div><dt>2,800+</dt><dd>flashcards</dd></div>
-            <div><dt>3,800+</dt><dd>exam questions</dd></div>
+            <div><dt>4,200+</dt><dd>exam questions</dd></div>
           </motion.dl>
         </div>
 
@@ -139,7 +139,7 @@ export default function Landing({ onStart, onDemo }) {
           <h2>Revision that fits how you work</h2>
           <ul className="nl-checks">
             <li>Add your own flashcards to any subject</li>
-            <li>Set your display to light or dark, your way</li>
+            <li>Cards come back just before you'd forget them</li>
             <li>Filter to just what you don't know yet</li>
             <li>Everything saves automatically to your account</li>
           </ul>
@@ -167,12 +167,17 @@ export default function Landing({ onStart, onDemo }) {
       <section className="nl-final">
         <motion.h2 {...reveal()}>Start revising in under a minute.</motion.h2>
         <motion.p {...reveal(0.06)}>Free to start. No card details needed.</motion.p>
-        <motion.div {...reveal(0.12)}><button className="nl-btn lg light" onClick={onStart}>Get started free</button></motion.div>
+        <motion.div {...reveal(0.12)}><button className="nl-btn lg light" onClick={onDemo}>Start revising free</button></motion.div>
       </section>
 
       <footer className="nl-footer">
         <Brand />
         <span>© {new Date().getFullYear()} Grade Lab · GCSE revision</span>
+        <span className="nl-footer-links">
+          <a href="./privacy.html">Privacy</a>
+          <a href="./terms.html">Terms</a>
+          <a href="mailto:gradelab26@gmail.com">Contact</a>
+        </span>
       </footer>
     </div>
   )
