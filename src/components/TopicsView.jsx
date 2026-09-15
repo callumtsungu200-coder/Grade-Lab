@@ -95,7 +95,8 @@ function AddCardModal({ title, topics, onAdd, onClose }) {
   )
 }
 
-function TopicCard({ subject, topic, progress, visibleByTier, onStudyTopic }) {
+// freeState: null (full access / not applicable) | 'unlocked' | 'locked'
+function TopicCard({ subject, topic, progress, visibleByTier, onStudyTopic, freeState = null }) {
   const cards = topic.cards
     .map((c) => ({ id: topic.code + '|' + c[0], tier: c[2] || '' }))
     .filter(visibleByTier)
@@ -126,6 +127,15 @@ function TopicCard({ subject, topic, progress, visibleByTier, onStudyTopic }) {
       <span className="tc-line" />
       <div className="tc-top">
         <span className="code">{topic.code}</span>
+        {freeState === 'unlocked' && <span className="tc-free">Free set</span>}
+        {freeState === 'locked' && (
+          <span className="tc-lock" aria-label="Needs full access" title="Needs full access">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <rect x="5" y="11" width="14" height="10" rx="2" />
+              <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+            </svg>
+          </span>
+        )}
       </div>
       <span className="tc-name">
         {topic.name}
@@ -151,6 +161,7 @@ export default function TopicsView({
   visibleByTier,
   onStudyTopic,
   onStudyAll,
+  topicFreeState, // (code) => null | 'unlocked' | 'locked'
   custom = [],
   onAddCustom,
   onRemoveCustom,
@@ -283,6 +294,7 @@ export default function TopicsView({
                         progress={progress}
                         visibleByTier={visibleByTier}
                         onStudyTopic={onStudyTopic}
+                freeState={topicFreeState ? topicFreeState(topic.code) : null}
                       />
                     ))}
                     <AddTile onClick={() => setAddTarget({ title: `In “${g}”`, topics: byGroup.get(g) })} />
@@ -300,6 +312,7 @@ export default function TopicsView({
                   progress={progress}
                   visibleByTier={visibleByTier}
                   onStudyTopic={onStudyTopic}
+                freeState={topicFreeState ? topicFreeState(topic.code) : null}
                 />
               ))}
               <AddTile onClick={() => setAddTarget({ title: 'Choose a subtopic', topics: subject.topics })} />
