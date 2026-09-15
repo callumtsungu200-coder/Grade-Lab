@@ -3177,3 +3177,68 @@ h1, h2, h3 { font-weight: var(--fw-semibold); letter-spacing: -0.02em; }
 @media (max-width: 560px) {
   .dash-subject { grid-template-columns: 20px minmax(0, 1fr) 40px; }
 }
+
+/* ============================================================
+   MOBILE LAYER — phone-first fixes. Same tokens, no new colours.
+   ============================================================ */
+
+/* Top bar: solid, calmer weight, safe-area aware (installed iOS app) */
+.mtop {
+  background: var(--bg);
+  backdrop-filter: none; -webkit-backdrop-filter: none;
+  padding-top: calc(12px + env(safe-area-inset-top, 0px));
+}
+.mtop-subj { font-weight: var(--fw-semibold); font-size: var(--fs-md); letter-spacing: -0.01em; }
+.mtop-mode { letter-spacing: 0; }
+.mtop-menu { border-radius: var(--radius-md); }
+@media (max-width: 900px) {
+  .sidebar { padding-top: calc(var(--space-5) + env(safe-area-inset-top, 0px)); padding-bottom: calc(var(--space-5) + env(safe-area-inset-bottom, 0px)); }
+  .main { padding-bottom: calc(var(--space-10) + env(safe-area-inset-bottom, 0px)); }
+}
+
+@media (max-width: 640px) {
+  /* Page rhythm */
+  .main { padding-top: var(--space-5); }
+  .topic-grid { gap: var(--space-2); }
+  .topic-card { min-height: 0; gap: var(--space-3); }
+  .topic-card:hover { transform: none; }
+
+  /* Study header: title on its own line, controls beneath */
+  .study-head { gap: var(--space-2) var(--space-3); margin-bottom: var(--space-4); }
+  .study-title { flex: 1 1 100%; order: -1; min-width: 0; }
+  .study-topic-name { font-size: var(--fs-md); }
+  .study-tools { margin-left: auto; }
+
+  /* Flashcard fills the width; prev / next sit under it */
+  .card-stage { flex-wrap: wrap; gap: var(--space-2); }
+  .card-slot { flex: 1 1 100%; order: -1; min-height: 300px; }
+  .card-slot > * { width: 100%; }
+  .flashcard, .flashcard-inner, .face, .empty-card { min-height: 300px; }
+  .face { padding: var(--space-8) var(--space-5); }
+  .face-text.q { font-size: 20px; }
+  .face-text.a { font-size: 15px; }
+  .nav-arrow { flex: 1 1 0; height: 40px; border-radius: var(--radius-md); }
+  .mark-row { gap: var(--space-2); margin-top: var(--space-4); }
+  .mark-row .btn { flex: 1; min-height: 48px; }
+  .kbd-hint { display: none; }
+
+  /* Footer: stack, wrap the links, keep each on one line */
+  .footer { flex-direction: column; align-items: flex-start; gap: var(--space-3); padding-bottom: calc(var(--space-10) + env(safe-area-inset-bottom, 0px)); }
+  .footer-actions { flex-wrap: wrap; gap: var(--space-2) var(--space-4); }
+  .link-btn { white-space: nowrap; }
+
+  /* Modals: full-width sheet with an even margin */
+  .modal-overlay { padding: var(--space-4); align-items: end; }
+  .modal-card { max-width: none; padding: var(--space-7) var(--space-5) calc(var(--space-6) + env(safe-area-inset-bottom, 0px)); max-height: 88vh; }
+  .modal-overlay { backdrop-filter: none; -webkit-backdrop-filter: none; }
+
+  /* Exam questions: quieter chips, tighter grade tabs */
+  .q-sections { gap: var(--space-1) var(--space-2); }
+  .q-section-btn { padding: 5px 10px; font-size: var(--fs-xs); }
+}
+
+/* Touch devices: no hover lifts, larger hit areas on small controls */
+@media (hover: none) {
+  .topic-card:hover, .plan:hover, .nl-feature:hover, .btn:hover:not(:disabled) { transform: none; }
+  .nav-arrow, .quiz-sound, .mtop-menu { min-width: 40px; min-height: 40px; }
+}
