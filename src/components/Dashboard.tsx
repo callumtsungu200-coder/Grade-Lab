@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import type { CSSProperties } from 'react'
 import SubjectIcon from './SubjectIcon'
+import { AnimatedNumber } from '../ui/motion'
 import type { Subject, ContentMode } from './Sidebar'
 // @ts-expect-error — untyped JS module
 import { flattenCards } from '../subjects.js'
@@ -183,25 +184,31 @@ export default function Dashboard({
       <section className="dash-stats" aria-label="Overview">
         <div className="dash-stat">
           <span className="dash-stat-label">Overall mastery</span>
-          <span className="dash-stat-value">{overall.pct}%</span>
+          <span className="dash-stat-value">
+            <AnimatedNumber value={overall.pct} />%
+          </span>
           <span className="dash-stat-sub">{fmt(overall.learning)} still learning</span>
         </div>
         <div className="dash-stat">
           <span className="dash-stat-label">Cards known</span>
-          <span className="dash-stat-value">{fmt(overall.known)}</span>
+          <span className="dash-stat-value">
+            <AnimatedNumber value={overall.known} />
+          </span>
           <span className="dash-stat-sub">of {fmt(overall.total)}</span>
         </div>
         <div className="dash-stat">
           <span className="dash-stat-label">Streak</span>
           <span className="dash-stat-value">
-            {streak}
+            <AnimatedNumber value={streak} />
             <span className="dash-stat-unit"> {streak === 1 ? 'day' : 'days'}</span>
           </span>
           <span className="dash-stat-sub">{fortnightTotal ? `${fmt(fortnightTotal)} in the last 14 days` : 'No activity yet'}</span>
         </div>
         <div className="dash-stat">
           <span className="dash-stat-label">Level</span>
-          <span className="dash-stat-value">{game.level}</span>
+          <span className="dash-stat-value">
+            <AnimatedNumber value={game.level} />
+          </span>
           <span className="dash-stat-sub">
             {game.rank.name} · {currencyIcon} {fmt(game.balance)}
           </span>

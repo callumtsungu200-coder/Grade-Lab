@@ -3009,3 +3009,143 @@ select.pp-input { appearance: none; -webkit-appearance: none; padding-right: 30p
 .nl-footer-links a:hover { opacity: 1; text-decoration: underline; }
 .gate-legal { margin: 10px 0 0; font-size: 12px; line-height: 1.5; color: var(--faint); text-align: center; }
 .gate-legal a { color: var(--dim); }
+
+/* ============================================================
+   REFINEMENT LAYER — same colours, cleaner surfaces.
+   Overrides older rules still in use (profile, shop, leaderboard,
+   paywall, sign-in, welcome, deck-complete, landing). Uses only the
+   existing colour tokens. No glows, no gradients, no heavy shadows.
+   ============================================================ */
+
+/* Typography: Geist everywhere, calmer weights, tighter headings */
+:root {
+  --font: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: 'Geist Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+.nland { --nl-sans: var(--font); --nl-serif: var(--font); }
+body {
+  background: var(--bg);
+  font-feature-settings: 'ss01' on, 'cv11' on;
+}
+h1, h2, h3 { font-weight: var(--fw-semibold); letter-spacing: -0.02em; }
+.dash-title, .quiz-h, .papers-title, .unlock-title { letter-spacing: -0.025em; }
+.dash-stat-value { font-weight: var(--fw-semibold); letter-spacing: -0.03em; }
+
+/* Buttons: tiny scale on hover/press, never glow */
+.btn, .q-reveal, .sm, .demo-signin, .nl-btn {
+  transition: background-color 0.15s var(--ease), border-color 0.15s var(--ease), color 0.15s var(--ease), transform 0.15s var(--ease);
+}
+.btn:hover:not(:disabled), .q-reveal:hover, .sm:hover, .demo-signin:hover { transform: scale(1.02); }
+.btn.big:hover:not(:disabled) { transform: scale(1.01); }
+.btn:active:not(:disabled), .q-reveal:active, .sm:active, .demo-signin:active, .nl-btn:active { transform: scale(0.98); }
+.btn.big { box-shadow: none; }
+.nl-btn { font-weight: var(--fw-semibold); letter-spacing: -0.005em; }
+.nl-btn:hover { transform: scale(1.02); }
+.nl-btn.lg { border-radius: var(--radius-lg); }
+
+/* Cards: 2px lift, border/background shift, ~200ms */
+.topic-card { transition: border-color 0.2s var(--ease), background-color 0.2s var(--ease), transform 0.2s var(--ease); }
+.topic-card:hover { transform: translateY(-2px); }
+.plan { border-radius: var(--radius-lg); transition: border-color 0.2s var(--ease), transform 0.2s var(--ease), background-color 0.2s var(--ease); }
+.plan:hover { transform: translateY(-2px); box-shadow: none; background: var(--bg-2); }
+
+/* Progress: fills grow in from the left when they appear */
+@keyframes fill-in { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+.bar > span, .dash-meter > span, .xp-bar span, .pbar > span {
+  transform-origin: left center;
+  animation: fill-in 0.8s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Navigation indicators (animated with layoutId) */
+.sb-nav-item.active { background: transparent; }
+.sb-active-pill {
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent) 32%, transparent);
+}
+.sb-subject.active { background: transparent; }
+.sb-subject-pill {
+  position: absolute; inset: 0; z-index: 0;
+  border-radius: var(--radius-md); background: var(--bg-2);
+}
+.sb-subject > :not(.sb-subject-pill) { position: relative; z-index: 1; }
+.q-grade-tab { position: relative; }
+.q-grade-tab.active { background: transparent; box-shadow: none; }
+.q-grade-pill {
+  position: absolute; inset: 0; z-index: 0;
+  border-radius: var(--radius-sm); background: var(--bg-2);
+  box-shadow: inset 0 0 0 1px var(--line-2);
+}
+.q-grade-label, .q-grade-count { position: relative; z-index: 1; }
+
+/* Surfaces: modals, toast, dropdowns */
+.modal-overlay { background: rgba(0, 0, 0, 0.62); backdrop-filter: none; -webkit-backdrop-filter: none; }
+.modal-card {
+  border-radius: var(--radius-xl); background: var(--bg-1); border: 1px solid var(--line-2);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+}
+.toast { background: var(--bg-2); border: 1px solid var(--line-2); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3); }
+.dd-menu { box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3); border-radius: var(--radius-md); }
+.mycards-count { background: var(--accent); }
+
+/* Sign-in / gate */
+.gate-card { background: var(--bg-1); border: 1px solid var(--line); border-radius: var(--radius-xl); box-shadow: none; }
+.gate-mark { background: var(--bg-2); border: 1px solid var(--line-2); box-shadow: none; }
+.auth-tabs-thumb { background: var(--bg-2); box-shadow: inset 0 0 0 1px var(--line-2); }
+
+/* Paywall plans */
+.plan-annual { background: var(--bg-1); border-color: color-mix(in srgb, var(--accent) 55%, transparent); }
+.plan-badge { background: var(--accent); color: var(--on-accent); font-weight: var(--fw-semibold); border-radius: var(--radius-sm); }
+.plan-price { font-weight: var(--fw-semibold); letter-spacing: -0.02em; }
+
+/* Welcome splash + deck complete */
+.welcome { background: rgba(0, 0, 0, 0.72); backdrop-filter: none; -webkit-backdrop-filter: none; }
+.welcome-inner { background: var(--bg-1); border: 1px solid var(--line-2); box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35); }
+.welcome-name { font-weight: var(--fw-semibold); letter-spacing: -0.03em; }
+.welcome-skip { background: var(--accent); box-shadow: none; font-weight: var(--fw-semibold); }
+.welcome-count { font-weight: var(--fw-semibold); }
+.deck-done { background: rgba(0, 0, 0, 0.72); backdrop-filter: none; -webkit-backdrop-filter: none; }
+.dd-card { background: var(--bg-1); border: 1px solid var(--line-2); box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35); border-radius: var(--radius-xl); }
+.dd-emoji { filter: none; }
+.dd-title { font-weight: var(--fw-semibold); letter-spacing: -0.02em; }
+.dd-cheer { font-weight: var(--fw-medium); }
+
+/* Profile, owner stats */
+.summary-card, .stat-card { background: var(--bg-1); border: 1px solid var(--line); border-radius: var(--radius-lg); }
+.summary-title, .admin-title { font-weight: var(--fw-semibold); letter-spacing: -0.015em; }
+.sn b, .stat-num { font-weight: var(--fw-semibold); }
+
+/* Game hero, shop, leaderboard (shop banner themes keep their own look) */
+.game-hero:not([class*='pbanner-']) { background: var(--bg-1); border: 1px solid var(--line); }
+.game-avatar { box-shadow: none; }
+.game-name, .game-level-num, .coin-big, .badge-name, .shop-item-name, .shop-preview-title { font-weight: var(--fw-semibold); }
+.game-title-chip { background: color-mix(in srgb, var(--gold) 16%, transparent); color: var(--gold); font-weight: var(--fw-semibold); }
+.xp-bar span { background: var(--accent); }
+.lvl-pill, .coin-pill, .shop-btn { font-weight: var(--fw-semibold); }
+.lb-you-card { background: var(--bg-1); border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--line)); }
+.lb-you-name, .lb-you-xp, .lb-pos, .lb-xp { font-weight: var(--fw-semibold); }
+
+/* Landing: no glow, softer device shadow, calmer weights */
+.nl-stage-glow { display: none; }
+.phone, .nland[data-nl-theme='dark'] .phone { box-shadow: 0 24px 48px rgba(0, 0, 0, 0.4), inset 0 0 0 2px #05070a; }
+.nl-media-chip { box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3); }
+.nl-chip-dot { box-shadow: none; }
+.nl-h1 { font-weight: var(--fw-semibold); letter-spacing: -0.035em; line-height: 1.05; }
+.nl-h1 em { font-style: normal; }
+.nl-section-head h2 { letter-spacing: -0.025em; }
+.nl-stats div dt { font-weight: var(--fw-semibold); letter-spacing: -0.02em; }
+.nl-feature { border-radius: var(--radius-lg); transition: border-color 0.2s var(--ease), transform 0.2s var(--ease); }
+.nl-feature:hover { transform: translateY(-2px); }
+.nl-eyebrow { font-weight: var(--fw-semibold); letter-spacing: 0.06em; }
+
+/* Mobile: tighter rhythm, bigger touch targets */
+@media (max-width: 640px) {
+  .nl-h1 { letter-spacing: -0.03em; }
+  .btn { min-height: 40px; }
+  .topic-card:hover { transform: none; }
+}
+
+/* Keep reduced-motion users still */
+@media (prefers-reduced-motion: reduce) {
+  .btn:hover, .btn:active, .nl-btn:hover, .topic-card:hover, .plan:hover, .nl-feature:hover { transform: none !important; }
+}

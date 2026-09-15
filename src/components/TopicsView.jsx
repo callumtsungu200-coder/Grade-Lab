@@ -3,7 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 
 const container = {
   hidden: {},
-  show: { transition: { staggerChildren: 0.025, delayChildren: 0.02 } },
+  show: { transition: { staggerChildren: 0.04, delayChildren: 0.02 } },
 }
 const item = {
   hidden: { opacity: 0, y: 6 },

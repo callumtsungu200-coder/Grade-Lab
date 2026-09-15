@@ -179,6 +179,13 @@ export default function Sidebar({
               onClose()
             }}
           >
+            {page === 'dashboard' && (
+              <motion.span
+                layoutId="sb-active-pill"
+                className="sb-active-pill"
+                transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+              />
+            )}
             <span className="sb-nav-icon" aria-hidden="true">
               <IconHome />
             </span>
@@ -237,7 +244,7 @@ export default function Sidebar({
                     <motion.span
                       layoutId="sb-active-pill"
                       className="sb-active-pill"
-                      transition={{ type: 'spring', stiffness: 420, damping: 34 }}
+                      transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
                     />
                   )}
                   <span className="sb-nav-icon" aria-hidden="true">
@@ -268,6 +275,13 @@ export default function Sidebar({
                     onClose()
                   }}
                 >
+                  {active && (
+                    <motion.span
+                      layoutId="sb-subject-pill"
+                      className="sb-subject-pill"
+                      transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+                    />
+                  )}
                   <span className="sb-subject-icon" aria-hidden="true">
                     <SubjectIcon subject={id} size={16} />
                   </span>
