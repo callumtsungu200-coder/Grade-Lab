@@ -1,6 +1,8 @@
 /* AQA GCSE Spanish (8692, first exams 2026) — the three specification themes,
    each split into its three topics, plus the grammar the spec prescribes.
    Card shape: [question, answer, tier]   tier: "" (both tiers) | "HT" (Higher only) */
+import vocab from './spanish-vocab.js'
+
 export default {
   id: "spanish",
   name: "Spanish",
@@ -602,5 +604,6 @@ export default {
         ["What is an adverb ending that matches English '-ly'?", "-mente added to the feminine adjective: rápidamente, normalmente", ""],
       ],
     },
+    ...vocab,
   ],
 }

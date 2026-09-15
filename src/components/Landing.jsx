@@ -26,7 +26,7 @@ const IconTrophy = (p) => (
 )
 
 const FEATURES = [
-  { Icon: IconCards, title: "Flashcards with real depth", text: "3,300+ exam-board-specific cards, split into the same subtopics your spec uses — not vague summaries." },
+  { Icon: IconCards, title: "Flashcards with real depth", text: "3,900+ exam-board-specific cards, split into the same subtopics your spec uses — not vague summaries." },
   { Icon: IconExam, title: "Exam questions, graded 4–9", text: "Thousands of exam-style questions organised by grade, each with a mark scheme and a model answer." },
   { Icon: IconQuiz, title: "Auto-marked quizzes", text: "Quick multiple-choice quizzes on any topic, marked the moment you finish. Choose your length and go." },
 ]
@@ -71,7 +71,7 @@ export default function Landing({ onStart, onDemo }) {
           </motion.div>
           <motion.dl className="nl-stats" initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.26 }}>
             <div><dt>12</dt><dd>subjects</dd></div>
-            <div><dt>3,300+</dt><dd>flashcards</dd></div>
+            <div><dt>3,900+</dt><dd>flashcards</dd></div>
             <div><dt>4,900+</dt><dd>exam questions</dd></div>
           </motion.dl>
         </div>
