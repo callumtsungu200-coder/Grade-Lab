@@ -102,7 +102,7 @@ export default {
       code: "1.6",
       name: "Surds (Higher)",
       cards: [
-        ["What is a surd?", "A root that can't be simplified to a whole number (e.g. √2), leaving an exact value.", "HT"],
+        ["What is a surd?", "An irrational root — one that can't be simplified to a whole number or fraction (e.g. √2), so it's left as an exact value.", "HT"],
         ["Rule: √a × √b = ?", "√(ab).", "HT"],
         ["Simplify √12.", "2√3.", "HT"],
         ["Simplify √50.", "5√2.", "HT"],
@@ -279,8 +279,8 @@ export default {
       cards: [
         ["What is the unitary method?", "Find the value of one item first, then scale up.", ""],
         ["3 pens cost 90p. How much do 5 pens cost?", "£1.50 (one pen = 30p).", ""],
-        ["What does direct proportion look like?", "y = kx (as one increases, the other increases at a constant rate).", ""],
-        ["What does inverse proportion look like?", "y = k/x (as one increases, the other decreases).", "HT"],
+        ["What does direct proportion look like?", "y = kx (a straight line through the origin — if x doubles, y doubles).", ""],
+        ["What does inverse proportion look like?", "y = k/x (xy stays constant — if x doubles, y halves).", "HT"],
         ["y is inversely proportional to x. If y = 4 when x = 3, find k.", "k = 12 (y = 12/x).", "HT"],
       ],
     },
@@ -429,7 +429,7 @@ export default {
       cards: [
         ["On a tree diagram, what do you do along the branches?", "Multiply the probabilities.", ""],
         ["On a tree diagram, what do you do for 'or' outcomes?", "Add the results of the separate paths.", ""],
-        ["What changes in a 'without replacement' problem?", "The total (denominator) decreases for the second pick.", "HT"],
+        ["What changes in a 'without replacement' problem?", "The total goes down by 1, and so does the count of the item already taken (e.g. 5 red of 8: P(RR) = 5/8 × 4/7).", "HT"],
         ["Set notation: what does ∪ mean?", "Union (A or B — everything in either set).", ""],
         ["Set notation: what does ∩ mean?", "Intersection (A and B — what's in both).", ""],
         ["Set notation: what does A' mean?", "The complement of A (everything not in A).", ""],

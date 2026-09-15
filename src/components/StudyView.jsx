@@ -22,7 +22,9 @@ export default function StudyView({
   const topicName =
     session.topicCode === 'ALL'
       ? 'Every topic'
-      : (subject.topics.find((t) => t.code === session.topicCode)?.name ?? '')
+      : session.topicCode === 'DUE'
+        ? 'Due for review'
+        : (subject.topics.find((t) => t.code === session.topicCode)?.name ?? '')
   const pillCode = session.topicCode === 'ALL' ? 'ALL' : session.topicCode
 
   const cardWithStatus = card ? { ...card, status: progress[card.id] } : null
@@ -38,12 +40,14 @@ export default function StudyView({
           <span className="study-topic-name">{topicName}</span>
         </div>
         <div className="study-tools">
-          <select value={mode} onChange={(e) => onChangeMode(e.target.value)} aria-label="Filter cards">
-            <option value="all">All cards</option>
-            <option value="learning">Learning + new</option>
-            <option value="unseen">Not seen only</option>
-            <option value="known">Known only</option>
-          </select>
+          {session.topicCode !== 'DUE' && (
+            <select value={mode} onChange={(e) => onChangeMode(e.target.value)} aria-label="Filter cards">
+              <option value="all">All cards</option>
+              <option value="learning">Learning + new</option>
+              <option value="unseen">Not seen only</option>
+              <option value="known">Known only</option>
+            </select>
+          )}
           <button className="btn ghost icon" onClick={onShuffle} title="Shuffle" aria-label="Shuffle">
             ⤨
           </button>

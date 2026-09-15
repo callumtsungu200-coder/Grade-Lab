@@ -110,7 +110,7 @@ export default defineConfig({
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
         // Skip Supabase / other API calls — those need the network anyway.
         navigateFallback: 'index.html',
-        navigateFallbackDenylist: [/^\/api/, /^\/rest\//, /^\/auth\//],
+        navigateFallbackDenylist: [/^\/api/, /^\/rest\//, /^\/auth\//, /\/(privacy|terms)\.html$/],
         // Runtime caches for cross-origin things Grade Lab loads.
         runtimeCaching: [
           {

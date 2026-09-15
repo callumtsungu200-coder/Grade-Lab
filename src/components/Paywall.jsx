@@ -40,8 +40,8 @@ export default function Paywall({ email, onClose, onRefresh, onSignOut, refreshi
         <h2 className="gate-title">Get full access</h2>
         <p className="gate-sub">
           The free plan gives you <strong>5 sets</strong> — flashcard decks, quiz sections or exam-question
-          sections — saved on this device. Full access opens every set in every subject, thousands of
-          flashcards, and progress that syncs across all your devices.
+          sections. Full access opens every set in every subject: thousands of flashcards, every quiz and
+          every exam-question section, plus reviewing across whole subjects at once.
         </p>
 
         {monthly || annual ? (

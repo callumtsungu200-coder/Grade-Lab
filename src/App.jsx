@@ -5,8 +5,10 @@ import Sidebar from './components/Sidebar'
 import Dashboard from './components/Dashboard'
 import PastPapersView from './components/PastPapersView'
 import UnlockSetModal from './components/UnlockSetModal.jsx'
-import { setKey, isSetUnlocked, unlockSet, useFreeSets } from './freeSets'
+import { setKey, isSetUnlocked, useFreeSets, attachAccount, detachAccount, claimSet } from './freeSets'
 import { logActivity } from './activity'
+import { dayNumber, dueCards, gatherSchedules, getAnchor, loadSchedule, recordReview, writeSchedules } from './srs'
+import { SRS_KEY, hasProgress, mergeCloudBlob } from './progressSync'
 import TopicsView from './components/TopicsView.jsx'
 import StudyView from './components/StudyView.jsx'
 import Toast from './components/Toast.jsx'
@@ -43,6 +45,29 @@ function gatherLocalProgress() {
     }
   })
   return all
+}
+
+// Progress plus spaced-repetition schedules, as stored in the cloud row.
+function gatherCloudBlob() {
+  const blob = gatherLocalProgress()
+  const srs = gatherSchedules(SUBJECT_ORDER)
+  if (Object.keys(srs).length) blob[SRS_KEY] = srs
+  return blob
+}
+
+// Write a merged cloud blob back into this browser.
+function writeCloudBlob(blob) {
+  Object.entries(blob).forEach(([sid, obj]) => {
+    if (sid === SRS_KEY) {
+      writeSchedules(obj)
+      return
+    }
+    try {
+      localStorage.setItem(`gcse-flashcards-${sid}-v1`, JSON.stringify(obj))
+    } catch {
+      /* ignore */
+    }
+  })
 }
 
 const LAST_KEY = 'gcse-flashcards-last-subject'
@@ -166,8 +191,7 @@ export default function App() {
     return access === 'demo' ? 'Guest' : 'You'
   })()
   const hasAccess = paid || isOwner
-  // Cloud sync stays a full-access feature; `readOnly` now only gates that.
-  const readOnly = !hasAccess && (!!user || access === 'demo')
+
   // Free plan: guests and unpaid accounts can unlock FREE_SET_LIMIT sets
   // (a flashcard deck, a quiz section or an exam section each). Progress
   // for those sets is saved on this device.
@@ -260,22 +284,14 @@ export default function App() {
   const syncFromCloud = useCallback(async (u) => {
     if (!u) return
     const cloud = await fetchCloudProgress(u.id)
-    const local = gatherLocalProgress()
+    const local = gatherCloudBlob()
     const cloudHas = cloud && Object.keys(cloud).length
 
     if (cloudHas) {
-      // Union of subjects; within a subject, union of card marks (cloud wins on conflict).
-      const merged = { ...local }
-      Object.entries(cloud).forEach(([sid, obj]) => {
-        merged[sid] = { ...(local[sid] || {}), ...obj }
-      })
-      Object.entries(merged).forEach(([sid, obj]) => {
-        try {
-          localStorage.setItem(`gcse-flashcards-${sid}-v1`, JSON.stringify(obj))
-        } catch {
-          /* ignore */
-        }
-      })
+      // Union of subjects; within a subject, union of card marks (cloud wins on
+      // conflict); spaced-repetition schedules keep the latest review per card.
+      const merged = mergeCloudBlob(local, cloud)
+      writeCloudBlob(merged)
       // Reload whichever subject is open NOW — not the one open when this
       // callback was created.
       const current = subjectIdRef.current
@@ -285,7 +301,7 @@ export default function App() {
       saveCloudProgress(u.id, merged)
       setSyncState({ status: 'saved', at: Date.now() })
       showToast('Progress synced')
-    } else if (Object.keys(local).length) {
+    } else if (hasProgress(local)) {
       // Cloud empty but we have local progress — seed the cloud from it.
       saveCloudProgress(u.id, local)
       setSyncState({ status: 'saved', at: Date.now() })
@@ -317,11 +333,13 @@ export default function App() {
         if (syncedUserRef.current !== u.id) {
           syncedUserRef.current = u.id
           syncFromCloud(u)
+          attachAccount(u.id)
         }
       } else {
         setPaid(false)
         syncedRef.current = false
         syncedUserRef.current = null
+        detachAccount()
       }
     }
     supabase.auth.getSession().then(({ data }) => handle(data.session?.user ?? null))
@@ -347,15 +365,15 @@ export default function App() {
   // Upload the current progress to the cloud and report the outcome so the UI can
   // show a live "Saved" status. Returns the save result.
   const pushProgress = useCallback(async () => {
-    if (!isSupabaseConfigured || !user || readOnly) return { ok: false }
-    const local = gatherLocalProgress()
-    if (!Object.keys(local).length) return { ok: false, empty: true }
+    if (!isSupabaseConfigured || !user) return { ok: false }
+    if (!Object.keys(gatherLocalProgress()).length) return { ok: false, empty: true }
+    const blob = gatherCloudBlob()
     setSyncState((s) => ({ status: 'saving', at: s.at }))
-    const res = await saveCloudProgress(user.id, local)
+    const res = await saveCloudProgress(user.id, blob)
     if (res && res.ok) setSyncState({ status: 'saved', at: Date.now() })
     else if (res && res.error) setSyncState((s) => ({ status: 'error', at: s.at }))
     return res || { ok: false }
-  }, [user, readOnly])
+  }, [user])
 
   // Manual "Back up now" — force an immediate upload.
   const backupNow = useCallback(async () => {
@@ -367,14 +385,14 @@ export default function App() {
 
   // Debounced push of all progress to the cloud whenever it changes (only if logged in).
   useEffect(() => {
-    if (!isSupabaseConfigured || !user || readOnly) return
+    if (!isSupabaseConfigured || !user) return
     // Never upload before the initial download/merge has run — that would wipe
     // saved progress with an empty/stale local copy.
     if (!syncedRef.current) return
     if (!Object.keys(gatherLocalProgress()).length) return
     const t = setTimeout(() => pushProgress(), 800)
     return () => clearTimeout(t)
-  }, [progress, subjectId, user, readOnly, pushProgress])
+  }, [progress, subjectId, user, pushProgress])
 
   // Keep the "saved 2m ago" label fresh.
   useEffect(() => {
@@ -391,7 +409,8 @@ export default function App() {
     setAccess('full')
   }, [])
   const enterDemo = useCallback(() => {
-    setWelcome({ name: 'Guest', quote: randomQuote() })
+    setWelcome((w) => w || { name: 'Guest', quote: randomQuote() })
+    setShowAuth(false)
     setAccess('demo')
   }, [])
   const signOut = useCallback(async () => {
@@ -463,16 +482,27 @@ export default function App() {
     [progress],
   )
 
+  // Spaced repetition: this subject's cards due for review today.
+  // Free plan: only decks the user has unlocked (and their own cards).
+  const dueNow = useMemo(() => {
+    const allowed = allCards.filter(
+      (c) => visibleByTier(c) && (!isFree || c.custom || freeSets.isUnlocked(setKey.cards(subjectId, c.code))),
+    )
+    return dueCards(allowed, progress, loadSchedule(subjectId), getAnchor(), dayNumber())
+    // activityTick re-reads schedules after every mark; freeSets.used after an unlock.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [allCards, visibleByTier, progress, subjectId, isFree, freeSets.used, activityTick])
+
   const startSession = useCallback(
     (topicCode) => {
-      const cards = applyMode(collectCards(topicCode), mode)
+      const cards = topicCode === 'DUE' ? dueNow : applyMode(collectCards(topicCode), mode)
       celebratedRef.current = false
       setSession({ topicCode, cards, index: 0 })
       setFlipped(false)
       setView('study')
       window.scrollTo({ top: 0, behavior: 'smooth' })
     },
-    [applyMode, collectCards, mode],
+    [applyMode, collectCards, mode, dueNow],
   )
 
   const goTopics = useCallback(() => setView('topics'), [])
@@ -504,6 +534,7 @@ export default function App() {
       // record the same mark twice.
       const cur = session.cards[session.index]
       if (cur) {
+        recordReview(subjectId, cur.id, status, progress[cur.id])
         logActivity({ t: status, s: subjectId, c: cur.code })
         setActivityTick((t) => t + 1)
       }
@@ -513,7 +544,7 @@ export default function App() {
         const nextProgress = { ...progress, [card.id]: status }
         setProgress(nextProgress)
 
-        if (mode !== 'all') {
+        if (mode !== 'all' && s.topicCode !== 'DUE') {
           // Rebuild the filtered list, trying to keep our place.
           const base = allCards.filter(
             (c) => (s.topicCode === 'ALL' || c.code === s.topicCode) && visibleByTier(c),
@@ -565,6 +596,7 @@ export default function App() {
       setSession((s) => ({
         ...s,
         cards: (() => {
+          if (s.topicCode === 'DUE') return s.cards // a review queue isn't re-filtered
           const base = allCards.filter(
             (c) => (s.topicCode === 'ALL' || c.code === s.topicCode) && visibleByTier(c),
           )
@@ -648,7 +680,7 @@ export default function App() {
     if (user) {
       setPaywallOpen(true)
     } else {
-      setAccess('locked')
+      // Guests keep their place: the sign-up screen's Back returns to the app.
       setShowAuth(true)
     }
   }, [user])
@@ -666,14 +698,17 @@ export default function App() {
     },
     [hasAccess],
   )
-  const confirmSet = useCallback(() => {
+  const confirmSet = useCallback(async () => {
     if (!setRequest) return
-    if (unlockSet(setRequest.key)) {
+    const req = setRequest
+    if (await claimSet(req.key)) {
       const go = pendingSetRef.current
       pendingSetRef.current = null
-      setSetRequest(null)
+      setSetRequest((cur) => (cur === req ? null : cur))
       if (go) go()
     }
+    // Otherwise the account's allowance was used up elsewhere: the modal stays
+    // open and re-renders with the updated count ("You've used all 5").
   }, [setRequest])
   const closeSet = useCallback(() => {
     pendingSetRef.current = null
@@ -801,6 +836,45 @@ export default function App() {
     [switchSubject, subjectId, view],
   )
 
+  // Due reviews per subject, for the dashboard (free plan: unlocked decks only).
+  const dueBySubject = useMemo(() => {
+    const today = dayNumber()
+    const anchor = getAnchor(today)
+    const out = {}
+    SUBJECT_ORDER.forEach((id) => {
+      const s = SUBJECTS[id]
+      if (!s) return
+      const prog = id === subjectId ? progress : progressBySubject[id] || {}
+      const cards = flattenCards(s).filter((c) => !isFree || freeSets.isUnlocked(setKey.cards(id, c.code)))
+      out[id] = dueCards(cards, prog, loadSchedule(id), anchor, today).length
+    })
+    return out
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [progressBySubject, progress, subjectId, isFree, freeSets.used, activityTick])
+
+  // "Review due cards" from the dashboard: switch subject first if needed, then
+  // start the review once that subject's cards are loaded.
+  const [pendingReview, setPendingReview] = useState(null)
+  const reviewDue = useCallback(
+    (id) => {
+      setContentMode('cards')
+      setPage('subject')
+      if (id && id !== subjectId) {
+        switchSubject(id)
+        setPendingReview(id)
+      } else {
+        startSession('DUE')
+      }
+    },
+    [subjectId, switchSubject, startSession],
+  )
+  useEffect(() => {
+    if (pendingReview && pendingReview === subjectId) {
+      setPendingReview(null)
+      startSession('DUE')
+    }
+  }, [pendingReview, subjectId, startSession])
+
   // Push the player's score to the global leaderboard (debounced) when signed in.
   useEffect(() => {
     if (!isSupabaseConfigured || !user) return
@@ -820,11 +894,19 @@ export default function App() {
     if (recovery) {
       return <AuthGate recovery onRecovered={() => setRecovery(false)} />
     }
-    if (!user && access !== 'demo') {
+    if (!user && (access !== 'demo' || showAuth)) {
       if (!showAuth) {
         return <Landing onStart={() => setShowAuth(true)} onDemo={enterDemo} />
       }
-      return <AuthGate onDemo={enterDemo} onBack={() => setShowAuth(false)} />
+      // Guests reach this from "Create free account" and go straight back to
+      // the app with Back; visitors from the landing page go back to it.
+      return (
+        <AuthGate
+          onDemo={enterDemo}
+          onBack={() => setShowAuth(false)}
+          backLabel={access === 'demo' ? '← Back to Grade Lab' : '← Back to home'}
+        />
+      )
     }
   } else if (access === 'locked') {
     return <Gate onUnlock={unlock} onDemo={enterDemo} />
@@ -882,7 +964,7 @@ export default function App() {
             </span>
           </span>
           <button className="demo-signin" onClick={promptUnlock}>
-            {user ? 'Get full access' : 'Sign in'}
+            {user ? 'Get full access' : 'Create free account'}
           </button>
         </div>
       )}
@@ -948,6 +1030,8 @@ export default function App() {
             activityTick={activityTick}
             onOpenSubject={openSubject}
             onQuickAction={quickAction}
+            dueBySubject={dueBySubject}
+            onReviewDue={reviewDue}
           />
         ) : contentMode === 'papers' ? (
           <PastPapersView subject={subject} canPost={isOwner} />
@@ -1006,6 +1090,8 @@ export default function App() {
                     () => startSession(code),
                   )
                 }}
+                dueCount={dueNow.length}
+                onReviewDue={() => startSession('DUE')}
                 onStudyAll={() =>
                   requestSet({ key: 'all', label: 'Study all topics', kind: 'cards', premiumOnly: true }, () =>
                     startSession('ALL'),
@@ -1048,7 +1134,11 @@ export default function App() {
                 onPrev={prev}
                 onMark={mark}
                 onShuffle={shuffle}
-                locked={isFree && !freeSets.isUnlocked(setKey.cards(subjectId, session.topicCode))}
+                locked={
+                  isFree &&
+                  session.topicCode !== 'DUE' &&
+                  !freeSets.isUnlocked(setKey.cards(subjectId, session.topicCode))
+                }
                 onUnlock={promptUnlock}
               />
             </motion.div>
@@ -1058,53 +1148,50 @@ export default function App() {
       </main>
 
       <footer className="footer">
-        {isFree ? (
-          <>
-            <span>Free plan — progress saves on this device.</span>
-            <span className="footer-actions">
-              <button className="link-btn" onClick={() => setContactOpen(true)}>Contact</button>
-              <button className="link-btn" onClick={promptUnlock}>
-                Get full access
-              </button>
-            </span>
-          </>
-        ) : (
-          <>
-            <span>
-              {user ? (
-                <>
-                  Signed in as {user.email}{isOwner ? ' (owner)' : ''}
-                  <span className="dotsep"> · </span>
-                  <span className={'sync-status ' + syncState.status}>{syncLabel}</span>
-                </>
-              ) : (
-                'Progress saves automatically in this browser, per subject.'
-              )}
-            </span>
-            <span className="footer-actions">
-              <button className="link-btn" onClick={() => setContactOpen(true)}>Contact</button>
-              {user && (
-                <button className="link-btn" onClick={backupNow} disabled={syncState.status === 'saving'}>
-                  {syncState.status === 'saving' ? '⟳ Backing up…' : '⟳ Back up now'}
-                </button>
-              )}
-              {user && isOwner && (
-                <button className="link-btn" onClick={() => setAdminOpen(true)}>🛠 Dashboard</button>
-              )}
-              {user && !isOwner && STRIPE_PORTAL_LINK && (
-                <a className="link-btn" href={STRIPE_PORTAL_LINK} target="_blank" rel="noreferrer">
-                  Manage subscription
-                </a>
-              )}
-              <button className="link-btn" onClick={resetSubject}>
-                Reset this subject
-              </button>
-              <button className="link-btn" onClick={signOut}>
-                {user ? 'Sign out' : 'Lock'}
-              </button>
-            </span>
-          </>
-        )}
+        <span>
+          {user ? (
+            <>
+              Signed in as {user.email}{isOwner ? ' (owner)' : ''}
+              <span className="dotsep"> · </span>
+              <span className={'sync-status ' + syncState.status}>{syncLabel}</span>
+            </>
+          ) : isFree ? (
+            'Free plan — progress saves on this device. Create a free account to keep it everywhere.'
+          ) : (
+            'Progress saves automatically in this browser, per subject.'
+          )}
+        </span>
+        <span className="footer-actions">
+          <button className="link-btn" onClick={() => setContactOpen(true)}>Contact</button>
+          <a className="link-btn" href="./privacy.html" target="_blank" rel="noopener">Privacy</a>
+          <a className="link-btn" href="./terms.html" target="_blank" rel="noopener">Terms</a>
+          {isFree && (
+            <button className="link-btn" onClick={promptUnlock}>
+              {user ? 'Get full access' : 'Create free account'}
+            </button>
+          )}
+          {user && (
+            <button className="link-btn" onClick={backupNow} disabled={syncState.status === 'saving'}>
+              {syncState.status === 'saving' ? '⟳ Backing up…' : '⟳ Back up now'}
+            </button>
+          )}
+          {user && isOwner && (
+            <button className="link-btn" onClick={() => setAdminOpen(true)}>🛠 Dashboard</button>
+          )}
+          {user && !isOwner && hasAccess && STRIPE_PORTAL_LINK && (
+            <a className="link-btn" href={STRIPE_PORTAL_LINK} target="_blank" rel="noreferrer">
+              Manage subscription
+            </a>
+          )}
+          <button className="link-btn" onClick={resetSubject}>
+            Reset this subject
+          </button>
+          {(user || !isFree) && (
+            <button className="link-btn" onClick={signOut}>
+              {user ? 'Sign out' : 'Lock'}
+            </button>
+          )}
+        </span>
       </footer>
       </div>
       </div>

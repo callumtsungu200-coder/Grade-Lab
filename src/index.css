@@ -2972,3 +2972,40 @@ select.pp-input { appearance: none; -webkit-appearance: none; padding-right: 30p
 .q-locked-title { margin: 0; font-size: var(--fs-md); font-weight: var(--fw-medium); }
 .q-locked-sub { margin: 0 0 var(--space-3); font-size: var(--fs-sm); color: var(--dim); max-width: 40ch; }
 .q-locked .btn.big { width: auto; }
+
+/* ============================================================
+   Spaced repetition — due bar on topics, due chip on dashboard.
+   ============================================================ */
+.due-bar {
+  display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); flex-wrap: wrap;
+  margin-bottom: var(--space-4); padding: var(--space-3) var(--space-4);
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--line));
+  background: color-mix(in srgb, var(--accent) 7%, var(--bg-1));
+  border-radius: var(--radius-lg);
+  animation: fade-in-up 0.24s var(--ease-out) both;
+}
+.due-bar-text { display: flex; align-items: center; gap: var(--space-3); min-width: 0; }
+.due-bar-count {
+  min-width: 36px; height: 36px; padding: 0 var(--space-2); display: grid; place-items: center;
+  border-radius: var(--radius-md); background: var(--accent); color: var(--on-accent);
+  font-weight: var(--fw-semibold); font-variant-numeric: tabular-nums;
+}
+.due-bar-copy { display: flex; flex-direction: column; font-size: var(--fs-sm); font-weight: var(--fw-medium); color: var(--text); }
+.due-bar-sub { font-size: var(--fs-xs); font-weight: var(--fw-regular); color: var(--dim); }
+.due-bar .btn.big.due-bar-btn { width: auto; flex-shrink: 0; }
+.dash-subject-due {
+  margin-left: var(--space-2); font-size: 10px; font-weight: var(--fw-semibold); letter-spacing: 0.04em;
+  color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent);
+  padding: 1px 6px; border-radius: var(--radius-full); white-space: nowrap;
+}
+.dash-actions .btn.dash-continue { display: flex; justify-content: space-between; align-items: center; }
+@media (max-width: 560px) {
+  .due-bar .btn.big.due-bar-btn { width: 100%; }
+}
+
+/* Legal links — landing footer + sign-up note */
+.nl-footer-links { display: inline-flex; gap: 16px; }
+.nl-footer-links a { color: inherit; opacity: 0.75; text-decoration: none; }
+.nl-footer-links a:hover { opacity: 1; text-decoration: underline; }
+.gate-legal { margin: 10px 0 0; font-size: 12px; line-height: 1.5; color: var(--faint); text-align: center; }
+.gate-legal a { color: var(--dim); }

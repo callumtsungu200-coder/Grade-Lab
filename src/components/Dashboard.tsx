@@ -38,6 +38,9 @@ export interface DashboardProps {
   activityTick: number
   onOpenSubject: (id: string) => void
   onQuickAction: (mode: ContentMode, subjectId?: string) => void
+  /** cards due for spaced-repetition review today, per subject */
+  dueBySubject?: Record<string, number>
+  onReviewDue?: (subjectId: string) => void
 }
 
 interface SubjectSummary {
@@ -77,6 +80,8 @@ export default function Dashboard({
   activityTick,
   onOpenSubject,
   onQuickAction,
+  dueBySubject = {},
+  onReviewDue,
 }: DashboardProps) {
   const events = useMemo(() => loadActivity(), [activityTick])
 
@@ -129,6 +134,16 @@ export default function Dashboard({
       .slice(0, 3)
   }, [summaries])
 
+  const dueTotal = Object.values(dueBySubject).reduce((a, n) => a + n, 0)
+  const dueTop = useMemo(() => {
+    let best: { id: string; count: number } | null = null
+    for (const id of subjectOrder) {
+      const n = dueBySubject[id] || 0
+      if (n > 0 && (!best || n > best.count)) best = { id, count: n }
+    }
+    return best
+  }, [dueBySubject, subjectOrder])
+
   const started = overall.known + overall.learning > 0
   const current = subjects[currentSubjectId]
   const lastSubject = last ? subjects[last.subject] : null
@@ -147,6 +162,12 @@ export default function Dashboard({
               You&apos;ve mastered <strong>{fmt(overall.known)}</strong> of {fmt(overall.total)} cards across{' '}
               {summaries.length} subjects
               {streak > 1 ? <> — and you&apos;re on a <strong>{streak}-day streak</strong>.</> : '.'}
+              {dueTotal > 0 && (
+                <>
+                  {' '}
+                  <strong>{fmt(dueTotal)}</strong> {dueTotal === 1 ? 'card is' : 'cards are'} due for review today.
+                </>
+              )}
             </>
           ) : (
             <>
@@ -208,6 +229,9 @@ export default function Dashboard({
                   <span className="dash-subject-name">
                     {s.name}
                     <span className="dash-subject-board">{s.board}</span>
+                    {(dueBySubject[s.id] || 0) > 0 && (
+                      <span className="dash-subject-due">{fmt(dueBySubject[s.id])} due</span>
+                    )}
                   </span>
                   <span
                     className="dash-meter"
@@ -328,8 +352,20 @@ export default function Dashboard({
             {current && <span className="dash-section-meta">{current.name}</span>}
           </div>
           <div className="dash-actions">
+            {dueTop && onReviewDue && (
+              <button type="button" className="btn big" onClick={() => onReviewDue(dueTop.id)}>
+                Review {fmt(dueTop.count)} due {dueTop.count === 1 ? 'card' : 'cards'} · {subjects[dueTop.id]?.name}
+                <span className="dash-action-sub">
+                  {dueTotal > dueTop.count ? `${fmt(dueTotal)} due in total` : 'Spaced repetition'}
+                </span>
+              </button>
+            )}
             {lastSubject && last && (
-              <button type="button" className="btn big" onClick={() => onOpenSubject(last.subject)}>
+              <button
+                type="button"
+                className={dueTop ? 'btn dash-continue' : 'btn big'}
+                onClick={() => onOpenSubject(last.subject)}
+              >
                 Continue {lastSubject.name}
                 <span className="dash-action-sub">{relTime(last.at)}</span>
               </button>

@@ -252,7 +252,7 @@ export default {
         ["Effect of alpha decay on the nucleus?", "Mass number falls by 4, atomic number by 2.", ""],
         ["Effect of beta decay on the nucleus?", "Mass number unchanged, atomic number up by 1.", ""],
         ["Effect of gamma emission on the nucleus?", "No change to mass or charge.", ""],
-        ["Define half-life.", "The time for the number of nuclei (or count-rate) to halve.", ""],
+        ["Define half-life.", "The time for the number of unstable nuclei in a sample to halve (or the count-rate to fall to half).", ""],
         ["What is radioactive contamination?", "Unwanted radioactive atoms on or in an object.", ""],
         ["What is irradiation?", "Exposing an object to radiation without it becoming radioactive.", ""],
       ],
@@ -533,7 +533,7 @@ export default {
       name: "Life cycle of a star",
       cards: [
         ["What keeps a main-sequence star stable?", "Gravity inwards balances the outward force from fusion.", "PO"],
-        ["Life cycle of a Sun-sized star?", "Nebula, protostar, main sequence, red giant, white dwarf.", "PO"],
+        ["Life cycle of a Sun-sized star?", "Nebula, protostar, main sequence, red giant, white dwarf, black dwarf.", "PO"],
         ["Life cycle of a star much bigger than the Sun?", "Nebula, protostar, main sequence, red supergiant, supernova, then neutron star or black hole.", "PO"],
         ["Where are elements heavier than iron made?", "In a supernova.", "PO"],
         ["What produces the natural elements?", "Fusion in stars.", "PO"],

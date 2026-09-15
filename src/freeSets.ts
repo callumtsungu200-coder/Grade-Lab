@@ -6,9 +6,15 @@
      quiz:<subject>:<section>      quizzes scoped to one section
      exam:<subject>:<section>      one exam-question section
 
-   Stored on the device (localStorage). Full access ignores all of this. */
+   Stored on the device (localStorage). When signed in, the account's list in
+   Supabase (`free_sets`, see supabase-free-sets.sql) is the source of truth:
+   it follows the account across devices and can't be reset by clearing
+   browser data. If that table hasn't been created yet, everything falls back
+   to device-only. Full access ignores all of this. */
 
 import { useEffect, useState } from 'react'
+// @ts-expect-error — untyped JS module
+import { supabase, isSupabaseConfigured } from './supabaseClient.js'
 
 export const FREE_SET_LIMIT = 5
 
@@ -68,6 +74,66 @@ export function unlockSet(key: string): boolean {
   if (keys.length >= FREE_SET_LIMIT) return false
   save([...keys, key])
   return true
+}
+
+/* -------------------------------------------------------- Account (cloud) */
+
+let accountId: string | null = null
+
+/** Signed in: add this device's sets to the account (the server enforces the
+    limit), then mirror the account's list locally. Fails soft. */
+export async function attachAccount(userId: string): Promise<void> {
+  accountId = userId
+  if (!isSupabaseConfigured || !supabase) return
+  try {
+    const { data, error } = await supabase.rpc('sync_free_sets', { local_keys: load() })
+    if (error) {
+      console.warn('sync_free_sets', error.message)
+      return
+    }
+    if (accountId === userId && Array.isArray(data)) save(data)
+  } catch (e) {
+    console.warn('sync_free_sets failed', e)
+  }
+}
+
+export function detachAccount(): void {
+  accountId = null
+}
+
+async function refreshFromAccount(): Promise<void> {
+  if (!accountId || !supabase) return
+  try {
+    const { data } = await supabase.from('free_sets').select('sets').eq('id', accountId).maybeSingle()
+    if (data && Array.isArray(data.sets)) save(data.sets)
+  } catch {
+    /* ignore */
+  }
+}
+
+/** Spend a free set on `key`. Signed in, the server has the final say — the
+    allowance may already have been used on another device. */
+export async function claimSet(key: string): Promise<boolean> {
+  const keys = load()
+  if (keys.includes(key)) return true
+  if (!accountId || !isSupabaseConfigured || !supabase) return unlockSet(key)
+  if (keys.length >= FREE_SET_LIMIT) return false
+  try {
+    const { data, error } = await supabase.rpc('claim_free_set', { set_key: key })
+    if (error) {
+      if (error.code === 'P0001' || /limit/i.test(error.message || '')) {
+        await refreshFromAccount()
+        return false
+      }
+      console.warn('claim_free_set', error.message)
+      return unlockSet(key) // table/function not set up yet → device-only
+    }
+    if (Array.isArray(data)) save(data)
+    return load().includes(key)
+  } catch (e) {
+    console.warn('claim_free_set failed', e)
+    return unlockSet(key)
+  }
 }
 
 /** Re-renders the caller whenever the allowance changes. */
