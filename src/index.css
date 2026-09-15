@@ -2934,3 +2934,41 @@ select.pp-input { appearance: none; -webkit-appearance: none; padding-right: 30p
   .quiz-ring { width: 108px; height: 108px; }
   .quiz-ring-pct { font-size: var(--fs-2xl); }
 }
+
+/* ============================================================
+   Free plan — "use a free set?" modal, banner meter, lock glyphs.
+   ============================================================ */
+.unlock-set { text-align: left; }
+.unlock-eyebrow {
+  display: inline-block; font-size: 11px; font-weight: var(--fw-semibold); letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--accent); margin-bottom: var(--space-2);
+}
+.unlock-title { margin: 0 0 var(--space-2); font-size: var(--fs-xl); font-weight: var(--fw-semibold); letter-spacing: -0.015em; line-height: 1.3; }
+.unlock-sub { margin: 0 0 var(--space-4); font-size: var(--fs-sm); color: var(--dim); line-height: 1.55; }
+.unlock-sub strong { color: var(--text); font-weight: var(--fw-medium); }
+.unlock-meter { display: flex; gap: 6px; margin-bottom: var(--space-5); }
+.unlock-pip { flex: 1; height: 6px; border-radius: var(--radius-full); background: var(--unseen); transition: background 0.2s var(--ease); }
+.unlock-pip.used { background: var(--faint); }
+.unlock-pip.next { background: var(--accent); animation: quiz-dot-pulse 1.4s ease-in-out infinite; }
+.unlock-actions { display: flex; gap: var(--space-2); flex-wrap: wrap; }
+.unlock-actions .btn.big { flex: 1; width: auto; }
+
+/* Banner: free-plan meter */
+.plan-meter { display: inline-flex; align-items: center; gap: 3px; margin: 0 var(--space-1); vertical-align: middle; }
+.plan-pip { width: 10px; height: 4px; border-radius: 2px; background: var(--line-2); }
+.plan-pip.used { background: var(--accent); }
+
+/* Topic card lock glyph (free plan, no sets left, deck not unlocked) */
+.tc-lock { display: inline-flex; color: var(--faint); margin-left: auto; }
+.tc-lock svg { width: 14px; height: 14px; }
+.tc-free { font-size: 10px; font-weight: var(--fw-semibold); letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent); margin-left: auto; }
+
+/* Exam-question section lock panel */
+.q-locked {
+  padding: var(--space-8) var(--space-6); text-align: center;
+  border: 1px dashed var(--line-2); border-radius: var(--radius-xl);
+  display: flex; flex-direction: column; align-items: center; gap: var(--space-2);
+}
+.q-locked-title { margin: 0; font-size: var(--fs-md); font-weight: var(--fw-medium); }
+.q-locked-sub { margin: 0 0 var(--space-3); font-size: var(--fs-sm); color: var(--dim); max-width: 40ch; }
+.q-locked .btn.big { width: auto; }

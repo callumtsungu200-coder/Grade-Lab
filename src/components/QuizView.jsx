@@ -58,7 +58,7 @@ function useCountUp(target, active, ms = 900) {
   return value
 }
 
-export default function QuizView({ subject, cards, locked = false, onUnlock, onComplete }) {
+export default function QuizView({ subject, cards, locked = false, onUnlock, onComplete, onGate }) {
   // phases: 'setup' | 'run' | 'results'
   const [phase, setPhase] = useState("setup")
   const [scope, setScope] = useState("all") // 'all' or a group name
@@ -106,13 +106,27 @@ export default function QuizView({ subject, cards, locked = false, onUnlock, onC
     const seen = excludeSeen ? loadSeen(subject.id) : null
     const qs = buildQuiz(poolForScope, length, { excludeIds: seen })
     if (!qs.length) return
-    unlockAudio()
-    sounds.tap()
-    setQuestions(qs)
-    setAnswers([])
-    setIndex(0)
-    setPicked(null)
-    setPhase("run")
+    const proceed = () => {
+      unlockAudio()
+      sounds.tap()
+      setQuestions(qs)
+      setAnswers([])
+      setIndex(0)
+      setPicked(null)
+      setPhase("run")
+    }
+    // Free plan: a quiz section is one "set"; "All topics" needs full access.
+    if (onGate) {
+      onGate(
+        {
+          key: `quiz:${subject.id}:${scope}`,
+          label: scope === "all" ? `${subject.name} — all topics` : scope,
+          kind: "quiz",
+          premiumOnly: scope === "all",
+        },
+        proceed,
+      )
+    } else proceed()
   }
 
   const retry = () => {

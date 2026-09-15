@@ -48,7 +48,7 @@ function QuestionCard({ id, q, mark, onMark }) {
   )
 }
 
-export default function QuestionsView({ subjectId }) {
+export default function QuestionsView({ subjectId, isFree = false, isUnlocked, onGate }) {
   const sections = useMemo(() => questionSections(subjectId), [subjectId])
   const sectionNames = useMemo(() => Object.keys(sections), [sections])
   const [section, setSection] = useState(sectionNames[0] || null)
@@ -83,6 +83,8 @@ export default function QuestionsView({ subjectId }) {
   const gradeCount = (g) => all.filter((q) => q.g === g).length
   const done = forGrade.filter((x) => marks[x.id]).length
   const full = forGrade.filter((x) => marks[x.id] === "full").length
+  // Free plan: each section is one "set" — locked until the user spends one on it.
+  const sectionLocked = isFree && typeof isUnlocked === "function" && !isUnlocked(section)
 
   return (
     <div className="questions">
@@ -122,6 +124,18 @@ export default function QuestionsView({ subjectId }) {
         <strong>{forGrade.length}</strong> questions · marked <strong>{done}</strong> · full marks on <strong>{full}</strong>
       </div>
 
+      {sectionLocked ? (
+        <div className="q-locked">
+          <p className="q-locked-title">{section} is a free set</p>
+          <p className="q-locked-sub">
+            Unlock it to work through its exam questions at every grade and mark yourself. Free-plan sets stay
+            unlocked on this device.
+          </p>
+          <button type="button" className="btn big" onClick={() => onGate && onGate(section)}>
+            Unlock this section
+          </button>
+        </div>
+      ) : (
       <AnimatePresence mode="popLayout">
         <motion.div
           key={section + grade}
@@ -135,6 +149,7 @@ export default function QuestionsView({ subjectId }) {
           ))}
         </motion.div>
       </AnimatePresence>
+      )}
     </div>
   )
 }

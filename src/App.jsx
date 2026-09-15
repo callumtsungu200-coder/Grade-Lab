@@ -4,6 +4,8 @@ import { SUBJECTS, SUBJECT_ORDER, flattenCards } from './subjects.js'
 import Sidebar from './components/Sidebar'
 import Dashboard from './components/Dashboard'
 import PastPapersView from './components/PastPapersView'
+import UnlockSetModal from './components/UnlockSetModal.jsx'
+import { setKey, isSetUnlocked, unlockSet, useFreeSets } from './freeSets'
 import { logActivity } from './activity'
 import TopicsView from './components/TopicsView.jsx'
 import StudyView from './components/StudyView.jsx'
@@ -107,7 +109,7 @@ export default function App() {
   const [checkingPaid, setCheckingPaid] = useState(false)
   const [recovery, setRecovery] = useState(false) // password-reset flow in progress
 
-  const [paywallOpen, setPaywallOpen] = useState(true) // dismissible paywall popup
+  const [paywallOpen, setPaywallOpen] = useState(false) // paywall popup — opened on demand, never on login
   const [contactOpen, setContactOpen] = useState(false) // contact popup
   const [welcome, setWelcome] = useState(null) // { name, quote } shown right after login
   const [adminOpen, setAdminOpen] = useState(true) // owner sees the dashboard first
@@ -154,8 +156,15 @@ export default function App() {
     return access === 'demo' ? 'Guest' : 'You'
   })()
   const hasAccess = paid || isOwner
-  // Read-only when browsing without access — either a demo guest or a logged-in unpaid user.
+  // Cloud sync stays a full-access feature; `readOnly` now only gates that.
   const readOnly = !hasAccess && (!!user || access === 'demo')
+  // Free plan: guests and unpaid accounts can unlock FREE_SET_LIMIT sets
+  // (a flashcard deck, a quiz section or an exam section each). Progress
+  // for those sets is saved on this device.
+  const isFree = !hasAccess
+  const freeSets = useFreeSets()
+  const [setRequest, setSetRequest] = useState(null) // { key, label, kind, premiumOnly? }
+  const pendingSetRef = useRef(null) // continuation to run once a set is unlocked
 
   const subject = SUBJECTS[subjectId]
   const allCards = useMemo(() => [...flattenCards(subject), ...customToCards(custom)], [subject, custom])
@@ -204,15 +213,15 @@ export default function App() {
     }
   }, [subjectId])
 
-  // Persist progress whenever it changes (never in read-only demo mode).
+  // Persist progress whenever it changes — on this device for everyone;
+  // the cloud copy is a full-access feature (see pushProgress).
   useEffect(() => {
-    if (readOnly) return
     try {
       localStorage.setItem(storeKey(subjectId), JSON.stringify(progress))
     } catch {
       /* ignore */
     }
-  }, [progress, subjectId, readOnly])
+  }, [progress, subjectId])
 
   const showToast = useCallback((msg) => {
     setToast({ msg, at: Date.now() })
@@ -467,10 +476,6 @@ export default function App() {
 
   const mark = useCallback(
     (status) => {
-      if (readOnly) {
-        showToast('Demo mode — unlock to save your progress')
-        return
-      }
       // Log outside the state updater so StrictMode's double-invoke can't
       // record the same mark twice.
       const cur = session.cards[session.index]
@@ -514,7 +519,7 @@ export default function App() {
         return s
       })
     },
-    [allCards, mode, progress, showToast, visibleByTier, readOnly, finishDeck, session, subjectId],
+    [allCards, mode, progress, visibleByTier, finishDeck, session, subjectId],
   )
 
   const shuffle = useCallback(() => {
@@ -623,6 +628,37 @@ export default function App() {
       setShowAuth(true)
     }
   }, [user])
+
+  // Free-plan gate. Runs `proceed` straight away for full access or an
+  // already-unlocked set; otherwise asks before spending a free set.
+  const requestSet = useCallback(
+    (req, proceed) => {
+      if (hasAccess || (!req.premiumOnly && isSetUnlocked(req.key))) {
+        proceed()
+        return
+      }
+      pendingSetRef.current = proceed
+      setSetRequest(req)
+    },
+    [hasAccess],
+  )
+  const confirmSet = useCallback(() => {
+    if (!setRequest) return
+    if (unlockSet(setRequest.key)) {
+      const go = pendingSetRef.current
+      pendingSetRef.current = null
+      setSetRequest(null)
+      if (go) go()
+    }
+  }, [setRequest])
+  const closeSet = useCallback(() => {
+    pendingSetRef.current = null
+    setSetRequest(null)
+  }, [])
+  const upgradeFromSet = useCallback(() => {
+    closeSet()
+    promptUnlock()
+  }, [closeSet, promptUnlock])
 
   const removeCustomCard = useCallback((id) => {
     setCustom((cur) => {
@@ -811,18 +847,18 @@ export default function App() {
       <div className="bg-glow" aria-hidden="true" />
       <div className="bg-noise" aria-hidden="true" />
 
-      {readOnly && (
+      {isFree && (
         <div className="demo-banner">
           <span>
-            {user
-              ? "🔒 You don’t have full access — browse freely, but progress won’t save."
-              : "👀 Demo mode — browse freely, but progress won’t save."}
+            Free plan — {freeSets.used} of {freeSets.limit} free sets used
+            <span className="plan-meter" aria-hidden="true">
+              {Array.from({ length: freeSets.limit }, (_, i) => (
+                <span key={i} className={'plan-pip' + (i < freeSets.used ? ' used' : '')} />
+              ))}
+            </span>
           </span>
-          <button
-            className="demo-signin"
-            onClick={user ? () => setPaywallOpen(true) : signOut}
-          >
-            {user ? 'Unlock' : 'Sign in'}
+          <button className="demo-signin" onClick={promptUnlock}>
+            {user ? 'Get full access' : 'Sign in'}
           </button>
         </div>
       )}
@@ -884,7 +920,7 @@ export default function App() {
             game={game}
             currencyIcon={CURRENCY.icon}
             currentSubjectId={subjectId}
-            readOnly={readOnly}
+            readOnly={false}
             activityTick={activityTick}
             onOpenSubject={openSubject}
             onQuickAction={quickAction}
@@ -893,7 +929,14 @@ export default function App() {
           <PastPapersView subject={subject} canPost={isOwner} />
         ) : contentMode === 'exam' ? (
           hasQuestions(subjectId) ? (
-            <QuestionsView subjectId={subjectId} />
+            <QuestionsView
+              subjectId={subjectId}
+              isFree={isFree}
+              isUnlocked={(section) => freeSets.isUnlocked(setKey.exam(subjectId, section))}
+              onGate={(section) =>
+                requestSet({ key: setKey.exam(subjectId, section), label: section, kind: 'exam' }, () => {})
+              }
+            />
           ) : (
             <p className="admin-empty">
               Exam questions for {subject.name} are coming soon — they’re being added subject by subject.
@@ -903,10 +946,8 @@ export default function App() {
           <QuizView
             subject={subject}
             cards={allCards}
-            locked={readOnly}
-            onUnlock={promptUnlock}
+            onGate={requestSet}
             onComplete={(correct, total) => {
-              if (readOnly) return
               recordQuiz(correct, total)
               logActivity({ t: 'quiz', s: subjectId, n: total, k: correct })
               setActivityTick((t) => t + 1)
@@ -933,8 +974,28 @@ export default function App() {
                 hideOnly={hideOnly}
                 setHideHT={setHideHT}
                 setHideOnly={setHideOnly}
-                onStudyTopic={startSession}
-                onStudyAll={() => startSession('ALL')}
+                onStudyTopic={(code) => {
+                  if (mineOnly) return startSession(code) // your own cards are always free
+                  const t = subject.topics.find((x) => x.code === code)
+                  requestSet(
+                    { key: setKey.cards(subjectId, code), label: t ? `${code} ${t.name}` : code, kind: 'cards' },
+                    () => startSession(code),
+                  )
+                }}
+                onStudyAll={() =>
+                  requestSet({ key: 'all', label: 'Study all topics', kind: 'cards', premiumOnly: true }, () =>
+                    startSession('ALL'),
+                  )
+                }
+                topicFreeState={(code) =>
+                  !isFree
+                    ? null
+                    : freeSets.isUnlocked(setKey.cards(subjectId, code))
+                      ? 'unlocked'
+                      : freeSets.left === 0
+                        ? 'locked'
+                        : null
+                }
                 custom={custom}
                 onAddCustom={addCustomCard}
                 onRemoveCustom={removeCustomCard}
@@ -963,7 +1024,7 @@ export default function App() {
                 onPrev={prev}
                 onMark={mark}
                 onShuffle={shuffle}
-                locked={readOnly}
+                locked={isFree && !freeSets.isUnlocked(setKey.cards(subjectId, session.topicCode))}
                 onUnlock={promptUnlock}
               />
             </motion.div>
@@ -973,13 +1034,13 @@ export default function App() {
       </main>
 
       <footer className="footer">
-        {readOnly ? (
+        {isFree ? (
           <>
-            <span>Demo mode — progress is not saved.</span>
+            <span>Free plan — progress saves on this device.</span>
             <span className="footer-actions">
               <button className="link-btn" onClick={() => setContactOpen(true)}>Contact</button>
-              <button className="link-btn" onClick={signOut}>
-                Unlock full access
+              <button className="link-btn" onClick={promptUnlock}>
+                Get full access
               </button>
             </span>
           </>
@@ -1023,6 +1084,18 @@ export default function App() {
       </footer>
       </div>
       </div>
+
+      <AnimatePresence>
+        {setRequest && (
+          <UnlockSetModal
+            request={setRequest}
+            used={freeSets.used}
+            onConfirm={confirmSet}
+            onUpgrade={upgradeFromSet}
+            onClose={closeSet}
+          />
+        )}
+      </AnimatePresence>
 
       <AnimatePresence>
         {isSupabaseConfigured && user && !hasAccess && paywallOpen && (

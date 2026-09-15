@@ -36,12 +36,12 @@ export default function Paywall({ email, onClose, onRefresh, onSignOut, refreshi
         <button className="modal-close" onClick={onClose} aria-label="Close">×</button>
 
         <div className="gate-mark">🔒</div>
-        <span className="paywall-status">No access yet</span>
-        <h2 className="gate-title">Unlock full access</h2>
+        <span className="paywall-status">Free plan</span>
+        <h2 className="gate-title">Get full access</h2>
         <p className="gate-sub">
-          This account <strong>doesn't have full access yet</strong>, so your progress won't save.
-          Unlock every subject and subtopic, thousands of flashcards, and progress that syncs
-          across all your devices.
+          The free plan gives you <strong>5 sets</strong> — flashcard decks, quiz sections or exam-question
+          sections — saved on this device. Full access opens every set in every subject, thousands of
+          flashcards, and progress that syncs across all your devices.
         </p>
 
         {monthly || annual ? (
