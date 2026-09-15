@@ -3242,3 +3242,21 @@ h1, h2, h3 { font-weight: var(--fw-semibold); letter-spacing: -0.02em; }
   .topic-card:hover, .plan:hover, .nl-feature:hover, .btn:hover:not(:disabled) { transform: none; }
   .nav-arrow, .quiz-sound, .mtop-menu { min-width: 40px; min-height: 40px; }
 }
+
+/* Menu / close controls: plain line icons, no box */
+.mtop-menu {
+  width: 36px; height: 36px; margin-left: -8px;
+  border: 0; background: transparent; color: var(--dim);
+  display: grid; place-items: center; border-radius: var(--radius-md);
+  transition: color 0.15s var(--ease), background 0.15s var(--ease);
+}
+.mtop-menu:hover, .mtop-menu:active { color: var(--text); background: var(--bg-2); }
+.mtop-menu:focus-visible { outline: none; box-shadow: var(--ring); }
+.mtop { gap: 8px; }
+.sb-close {
+  width: 36px; height: 36px; padding: 0; display: none; place-items: center;
+  border-radius: var(--radius-md); color: var(--dim);
+  transition: color 0.15s var(--ease), background 0.15s var(--ease);
+}
+.sb-close:hover, .sb-close:active { color: var(--text); background: var(--bg-2); }
+@media (max-width: 900px) { .sb-close { display: grid; } }

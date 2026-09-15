@@ -999,7 +999,9 @@ export default function App() {
             onClick={() => setSidebarOpen(true)}
             aria-label="Open menu"
           >
-            <span /><span /><span />
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" aria-hidden="true">
+              <path d="M4 7h16M4 12h16M4 17h16" />
+            </svg>
           </button>
           <div className="mtop-title">
             <span className="mtop-subj">{page === 'dashboard' ? 'Dashboard' : subject.name}</span>
