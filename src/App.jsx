@@ -92,6 +92,16 @@ export default function App() {
   const [access, setAccess] = useState(initialAccess)
   const [subjectId, setSubjectId] = useState(initialSubject)
   const [progress, setProgress] = useState(() => loadProgress(initialSubject()))
+  // Data-safety refs (see the sync hotfix):
+  // - subjectIdRef: the live subject id, for async callbacks that would
+  //   otherwise capture a stale one.
+  // - progressOwnerRef: which subject the in-memory `progress` belongs to; the
+  //   persist effect refuses to write one subject's marks under another's key.
+  // - syncedUserRef: the user already merged with the cloud this page session.
+  const subjectIdRef = useRef(subjectId)
+  subjectIdRef.current = subjectId
+  const progressOwnerRef = useRef(subjectId)
+  const syncedUserRef = useRef(null)
   const [view, setView] = useState('topics') // 'topics' | 'study'
   const [hideHT, setHideHT] = useState(false)
   const [hideOnly, setHideOnly] = useState(false)
@@ -216,6 +226,8 @@ export default function App() {
   // Persist progress whenever it changes — on this device for everyone;
   // the cloud copy is a full-access feature (see pushProgress).
   useEffect(() => {
+    // Never write one subject's marks under another subject's key.
+    if (progressOwnerRef.current !== subjectId) return
     try {
       localStorage.setItem(storeKey(subjectId), JSON.stringify(progress))
     } catch {
@@ -264,7 +276,11 @@ export default function App() {
           /* ignore */
         }
       })
-      setProgress(loadProgress(subjectId))
+      // Reload whichever subject is open NOW — not the one open when this
+      // callback was created.
+      const current = subjectIdRef.current
+      progressOwnerRef.current = current
+      setProgress(loadProgress(current))
       // Push the merged result back so the cloud gains any local-only marks.
       saveCloudProgress(u.id, merged)
       setSyncState({ status: 'saved', at: Date.now() })
@@ -276,7 +292,7 @@ export default function App() {
     }
     // Only now is it safe to let the debounced uploader run.
     syncedRef.current = true
-  }, [subjectId, showToast])
+  }, [showToast])
 
   // Re-check whether the user has paid (used after returning from Stripe).
   const refreshPaid = useCallback(async () => {
@@ -295,10 +311,17 @@ export default function App() {
       setUser(u)
       if (u) {
         fetchPaid(u.id).then(setPaid)
-        syncFromCloud(u)
+        // Supabase re-announces the session on every tab/app focus and every
+        // token refresh. Merge with the cloud only once per user per page
+        // session; the debounced uploader keeps the cloud current after that.
+        if (syncedUserRef.current !== u.id) {
+          syncedUserRef.current = u.id
+          syncFromCloud(u)
+        }
       } else {
         setPaid(false)
         syncedRef.current = false
+        syncedUserRef.current = null
       }
     }
     supabase.auth.getSession().then(({ data }) => handle(data.session?.user ?? null))
@@ -405,6 +428,7 @@ export default function App() {
   const switchSubject = useCallback((id) => {
     if (!SUBJECTS[id]) return
     setSubjectId(id)
+    progressOwnerRef.current = id
     setProgress(loadProgress(id))
     setCustom(loadCustom(id))
     setView('topics')
