@@ -10,10 +10,10 @@ const DELETE_PASSWORD = "callum2011"
 
 // Access options shown in the per-user dropdown. Each maps to a paid flag + plan.
 const OPTIONS = [
-  { value: "free", label: "No access", paid: false, plan: "free" },
+  { value: "free", label: "Free plan (5 sets)", paid: false, plan: "free" },
   { value: "monthly", label: "Monthly", paid: true, plan: "monthly" },
   { value: "annual", label: "Annual", paid: true, plan: "annual" },
-  { value: "comp", label: "Free access (comp)", paid: true, plan: "comp" },
+  { value: "comp", label: "Full access, free (comp)", paid: true, plan: "comp" },
 ]
 
 function currentValue(p) {
