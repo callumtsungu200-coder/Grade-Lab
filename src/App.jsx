@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { SUBJECTS, SUBJECT_ORDER, flattenCards } from './subjects.js'
 import Sidebar from './components/Sidebar'
 import Dashboard from './components/Dashboard'
+import { PageTransition } from './ui/motion'
 import PastPapersView from './components/PastPapersView'
 import UnlockSetModal from './components/UnlockSetModal.jsx'
 import { setKey, isSetUnlocked, useFreeSets, attachAccount, detachAccount, claimSet } from './freeSets'
@@ -1017,6 +1018,8 @@ export default function App() {
         </div>
 
       <main className="main">
+        <AnimatePresence mode="wait" initial={false}>
+        <PageTransition key={page === 'dashboard' ? 'dashboard' : `${subjectId}:${contentMode}`}>
         {page === 'dashboard' ? (
           <Dashboard
             displayName={displayName}
@@ -1145,6 +1148,8 @@ export default function App() {
           )}
         </AnimatePresence>
         )}
+        </PageTransition>
+        </AnimatePresence>
       </main>
 
       <footer className="footer">

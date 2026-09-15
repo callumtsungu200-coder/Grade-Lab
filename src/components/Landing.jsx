@@ -77,7 +77,7 @@ export default function Landing({ onStart, onDemo }) {
         </div>
 
         <motion.div className="nl-hero-stage" initial={{ opacity: 0, y: 46, rotate: -8 }} animate={{ opacity: 1, y: 0, rotate: -5 }} transition={{ duration: 0.9, ease: [0.2, 0.7, 0.2, 1], delay: 0.2 }}>
-          <div className="nl-stage-glow" aria-hidden="true" />
+
           <div className="phone-float">
             <PhoneMock screen="cards" />
           </div>

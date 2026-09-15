@@ -113,7 +113,14 @@ export default function QuestionsView({ subjectId, isFree = false, isUnlocked, o
             className={"q-grade-tab" + (g === grade ? " active" : "")}
             onClick={() => setGrade(g)}
           >
-            Grade {g}
+            {g === grade && (
+              <motion.span
+                layoutId="q-grade-pill"
+                className="q-grade-pill"
+                transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+              />
+            )}
+            <span className="q-grade-label">Grade {g}</span>
             <span className="q-grade-count">{gradeCount(g)}</span>
           </button>
         ))}
