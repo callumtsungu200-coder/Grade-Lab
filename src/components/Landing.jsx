@@ -72,7 +72,7 @@ export default function Landing({ onStart, onDemo }) {
           <motion.dl className="nl-stats" initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.26 }}>
             <div><dt>11</dt><dd>subjects</dd></div>
             <div><dt>2,800+</dt><dd>flashcards</dd></div>
-            <div><dt>4,200+</dt><dd>exam questions</dd></div>
+            <div><dt>4,900+</dt><dd>exam questions</dd></div>
           </motion.dl>
         </div>
 
