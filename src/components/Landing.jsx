@@ -26,7 +26,7 @@ const IconTrophy = (p) => (
 )
 
 const FEATURES = [
-  { Icon: IconCards, title: "Flashcards with real depth", text: "2,800+ exam-board-specific cards, split into the same subtopics your spec uses — not vague summaries." },
+  { Icon: IconCards, title: "Flashcards with real depth", text: "3,300+ exam-board-specific cards, split into the same subtopics your spec uses — not vague summaries." },
   { Icon: IconExam, title: "Exam questions, graded 4–9", text: "Thousands of exam-style questions organised by grade, each with a mark scheme and a model answer." },
   { Icon: IconQuiz, title: "Auto-marked quizzes", text: "Quick multiple-choice quizzes on any topic, marked the moment you finish. Choose your length and go." },
 ]
@@ -62,7 +62,7 @@ export default function Landing({ onStart, onDemo }) {
             Everything you need to reach <em>grade 9</em>.
           </motion.h1>
           <motion.p className="nl-lead" initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.12 }}>
-            Flashcards, exam-style questions and auto-marked quizzes across 11 GCSE subjects —
+            Flashcards, exam-style questions and auto-marked quizzes across 12 GCSE subjects —
             built around your exam board, with progress that follows you everywhere.
           </motion.p>
           <motion.div className="nl-cta" initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.19 }}>
@@ -70,8 +70,8 @@ export default function Landing({ onStart, onDemo }) {
             <button className="nl-btn ghost lg" onClick={onStart}>I have an account</button>
           </motion.div>
           <motion.dl className="nl-stats" initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.26 }}>
-            <div><dt>11</dt><dd>subjects</dd></div>
-            <div><dt>2,800+</dt><dd>flashcards</dd></div>
+            <div><dt>12</dt><dd>subjects</dd></div>
+            <div><dt>3,300+</dt><dd>flashcards</dd></div>
             <div><dt>4,900+</dt><dd>exam questions</dd></div>
           </motion.dl>
         </div>
