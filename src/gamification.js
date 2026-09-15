@@ -64,6 +64,18 @@ function readJSON(key) {
   }
 }
 
+// What a finished quiz is worth (shown on the results screen). Mirrors the
+// RATE table above, including the perfect-quiz bonus.
+export function quizReward(correct, total) {
+  const wrong = Math.max(0, total - correct)
+  const perfect = total > 0 && correct === total
+  return {
+    xp: correct * RATE.quizCorrect.xp + wrong * RATE.quizWrong.xp + (perfect ? RATE.perfect.xp : 0),
+    c: correct * RATE.quizCorrect.c + wrong * RATE.quizWrong.c + (perfect ? RATE.perfect.c : 0),
+    perfect,
+  }
+}
+
 // Record a finished quiz so quiz XP/Gradons and badges count.
 export function recordQuiz(correct, total) {
   const g = loadGame()
