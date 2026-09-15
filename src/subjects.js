@@ -9,6 +9,7 @@ import englishLiterature from './data/english-literature.js'
 import business from './data/business.js'
 import citizenship from './data/citizenship.js'
 import religiousStudies from './data/religious-studies.js'
+import spanish from './data/spanish.js'
 
 // Order the subjects appear in the switcher.
 const MODULES = [
@@ -23,6 +24,7 @@ const MODULES = [
   business,
   citizenship,
   religiousStudies,
+  spanish,
 ]
 
 export const SUBJECT_ORDER = MODULES.map((m) => m.id)

@@ -71,6 +71,7 @@
 :root[data-subject='business']           { --accent: #fab005; --accent-deep: #f08c00; }
 :root[data-subject='citizenship']        { --accent: #cc5de8; --accent-deep: #ae3ec9; }
 :root[data-subject='religious-studies']  { --accent: #a9e34b; --accent-deep: #74b816; }
+:root[data-subject='spanish']            { --accent: #ff8787; --accent-deep: #e03131; }
 
 * { box-sizing: border-box; }
 html, body, #root { height: 100%; }

@@ -152,6 +152,15 @@ export default function SubjectIcon({
         </svg>
       )
 
+    /* Speech bubble with a tilde — Spanish */
+    case 'spanish':
+      return (
+        <svg {...commonSvg}>
+          <path d="M4 6.5 a2.5 2.5 0 0 1 2.5 -2.5 h11 a2.5 2.5 0 0 1 2.5 2.5 v8 a2.5 2.5 0 0 1 -2.5 2.5 h-7.5 l-4.5 3.5 v-3.5 h-1 a2.5 2.5 0 0 1 -2.5 -2.5 z" />
+          <path d="M8.5 11.2 c1 -1.4 2 -1.4 3 0 c1 1.4 2 1.4 3 0" />
+        </svg>
+      )
+
     /* Fallback — a hash / grid */
     default:
       return (
