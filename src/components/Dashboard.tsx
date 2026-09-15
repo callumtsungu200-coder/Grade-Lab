@@ -220,7 +220,7 @@ export default function Dashboard({
         <section className="dash-section" aria-label="Subjects">
           <div className="dash-section-head">
             <h2 className="dash-section-title">Subjects</h2>
-            <span className="dash-section-meta">{summaries.length} · sorted by syllabus</span>
+            <span className="dash-section-meta">{summaries.length} subjects</span>
           </div>
           <ul className="dash-subjects">
             {summaries.map((s) => (
@@ -234,7 +234,7 @@ export default function Dashboard({
                     <SubjectIcon subject={s.id} size={16} />
                   </span>
                   <span className="dash-subject-name">
-                    {s.name}
+                    <span className="dash-subject-label">{s.name}</span>
                     <span className="dash-subject-board">{s.board}</span>
                     {(dueBySubject[s.id] || 0) > 0 && (
                       <span className="dash-subject-due">{fmt(dueBySubject[s.id])} due</span>
@@ -265,26 +265,28 @@ export default function Dashboard({
         </section>
 
         <div className="dash-side">
-          <section className="dash-section" aria-label="Needs attention">
-            <div className="dash-section-head">
-              <h2 className="dash-section-title">Needs attention</h2>
-            </div>
-            <ul className="dash-attention">
-              {attention.map((s) => (
-                <li key={s.id}>
-                  <button type="button" className="dash-attention-row" onClick={() => onOpenSubject(s.id)}>
-                    <span className="dash-attention-name">{s.name}</span>
-                    <span className="dash-attention-pct">
-                      {s.known + s.learning === 0 ? 'Not started' : `${s.pct}% known`}
-                    </span>
-                    <span className="dash-attention-go" aria-hidden="true">
-                      Start →
-                    </span>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </section>
+          {started && (
+            <section className="dash-section" aria-label="Needs attention">
+              <div className="dash-section-head">
+                <h2 className="dash-section-title">Needs attention</h2>
+              </div>
+              <ul className="dash-attention">
+                {attention.map((s) => (
+                  <li key={s.id}>
+                    <button type="button" className="dash-attention-row" onClick={() => onOpenSubject(s.id)}>
+                      <span className="dash-attention-name">{s.name}</span>
+                      <span className="dash-attention-pct">
+                        {s.known + s.learning === 0 ? 'Not started' : `${s.pct}% known`}
+                      </span>
+                      <span className="dash-attention-go" aria-hidden="true">
+                        {s.known + s.learning === 0 ? 'Start' : 'Continue'} →
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
 
           <section className="dash-section" aria-label="Recent activity">
             <div className="dash-section-head">
@@ -325,8 +327,11 @@ export default function Dashboard({
         <section className="dash-section" aria-label="Progress over time">
           <div className="dash-section-head">
             <h2 className="dash-section-title">Cards reviewed</h2>
-            <span className="dash-section-meta">Last 14 days · {fmt(fortnightTotal)} total</span>
+            {fortnightTotal > 0 && (
+              <span className="dash-section-meta">Last 14 days · {fmt(fortnightTotal)} total</span>
+            )}
           </div>
+          {fortnightTotal > 0 && (
           <div className="dash-chart" role="list" aria-label="Cards reviewed per day, last 14 days">
             {days.map((d) => (
               <button
@@ -350,7 +355,8 @@ export default function Dashboard({
               </button>
             ))}
           </div>
-          {fortnightTotal === 0 && <p className="dash-empty">No activity in the last two weeks.</p>}
+          )}
+          {fortnightTotal === 0 && <p className="dash-empty">Your daily progress chart appears here once you start.</p>}
         </section>
 
         <section className="dash-section" aria-label="Quick actions">

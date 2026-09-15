@@ -3149,3 +3149,31 @@ h1, h2, h3 { font-weight: var(--fw-semibold); letter-spacing: -0.02em; }
 @media (prefers-reduced-motion: reduce) {
   .btn:hover, .btn:active, .nl-btn:hover, .topic-card:hover, .plan:hover, .nl-feature:hover { transform: none !important; }
 }
+
+/* Dashboard: cleaner rows, quieter footer, empty states collapse */
+.dash-subject { grid-template-columns: 20px minmax(0, 2fr) minmax(56px, 1fr) 36px 60px; }
+@media (max-width: 1200px) { .dash-subject-board { display: none; } }
+.dash-subject-name { overflow: visible; }
+.dash-subject-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dash-subject-board { flex-shrink: 0; }
+.dash-subject-arrow { display: none; }
+.dash-subject-count { padding-right: var(--space-1); }
+.dash-actions-row { grid-template-columns: 1fr; }
+.dash-actions-row .btn { justify-content: space-between; }
+.dash-actions-row .btn::after { content: '→'; color: var(--faint); font-weight: var(--fw-regular); }
+.dash-attention-row { border-color: transparent; background: transparent; padding-inline: var(--space-2); }
+.dash-attention-row:hover { background: var(--bg-2); border-color: transparent; }
+.dash-attention { gap: 0; }
+.dash-attention li + li .dash-attention-row { border-top-color: var(--line); border-radius: 0; }
+.dash-attention li:first-child .dash-attention-row { border-radius: var(--radius-md) var(--radius-md) 0 0; }
+.dash-attention li:last-child .dash-attention-row { border-radius: 0 0 var(--radius-md) var(--radius-md); }
+.dash-attention li:only-child .dash-attention-row { border-radius: var(--radius-md); }
+.footer { color: var(--faint); font-weight: var(--fw-regular); font-size: var(--fs-xs); }
+.link-btn { color: var(--dim); font-weight: var(--fw-medium); font-size: var(--fs-xs); text-decoration: none; transition: color 0.15s var(--ease); }
+.link-btn:hover { color: var(--text); text-decoration: underline; text-underline-offset: 3px; }
+@media (max-width: 960px) {
+  .dash-subject { grid-template-columns: 20px minmax(0, 2fr) minmax(56px, 1fr) 36px; }
+}
+@media (max-width: 560px) {
+  .dash-subject { grid-template-columns: 20px minmax(0, 1fr) 40px; }
+}
