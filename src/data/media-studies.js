@@ -1,5 +1,7 @@
 /* Eduqas GCSE Media Studies — grouped by the theoretical framework, grade-9 depth.
    Untiered; no tiers. Card shape: [question, answer, tier] (tier always "") */
+import sets from './media-studies-sets.js'
+
 export default {
   id: "media-studies",
   name: "Media Studies",
@@ -67,7 +69,7 @@ export default {
         ["What is self-representation?", "When people represent themselves (e.g. on social media).", ""],
         ["What affects how audiences read a representation?", "Their own experiences, beliefs and identity.", ""],
         ["How can representations be reinforced?", "By repeating the same viewpoints across many products.", ""],
-        ["Give an example of a countertype.", "The 'This Girl Can' campaign shows real, ordinary, active women.", ""],
+        ["Give an example of a countertype.", "Trigger Point's Lana Washington: a woman leading a bomb-disposal team, a role usually coded male.", ""],
       ],
     },
     {
@@ -137,7 +139,7 @@ export default {
         ["What is political context?", "How a product reflects political ideas or viewpoints.", ""],
         ["What is economic context?", "How money and commercial factors shape a product.", ""],
         ["Give an example of historical context.", "The Quality Street (1956) advert reflects 1950s gender roles.", ""],
-        ["Give an example of social/cultural context.", "'This Girl Can' (2015) reflects modern attitudes to gender in sport.", ""],
+        ["Give an example of social/cultural context.", "The NHS 111 advert (2023) reflects post-pandemic pressure on A&E and the push to use 111 first.", ""],
         ["How can newspapers show political context?", "Through their political viewpoint (e.g. The Sun vs The Guardian).", ""],
         ["Why do interpretations change over time?", "Because social attitudes change.", ""],
       ],
@@ -173,12 +175,12 @@ export default {
         ["What are the set magazine covers?", "Vogue and GQ.", ""],
         ["What audience and values does Vogue target?", "A fashion-focused, aspirational audience.", ""],
         ["What audience does GQ target?", "A men's lifestyle audience.", ""],
-        ["What is the 'This Girl Can' advert, and who made it?", "A Sport England campaign challenging gender stereotypes in sport.", ""],
+        ["What are the two set print adverts (for 2027)?", "Quality Street (1956) and NHS 111 (2023); NHS 111 replaced This Girl Can.", ""],
         ["What does the Quality Street (1956) advert show?", "Historical context — 1950s gender roles and family values.", ""],
         ["What are the set film marketing products?", "The Man with the Golden Gun (1974) and No Time to Die (2021).", ""],
         ["Why is No Time to Die studied for industries?", "It shows conglomerate ownership, convergence and cross-media marketing.", ""],
-        ["What radio products are set?", "The Archers / Desert Island Discs on BBC Radio 4.", ""],
-        ["Why is The Archers significant?", "It is the world's longest-running radio soap and a BBC public service programme.", ""],
+        ["What is the set radio product (for 2027)?", "Desert Island Discs on BBC Radio 4 (it replaced The Archers).", ""],
+        ["Why is Desert Island Discs significant?", "Running since 1942, it is one of the BBC's longest-running programmes and a model of public service talk radio.", ""],
         ["What is the set video game and its genre?", "Fortnite — an online battle royale.", ""],
         ["Why is Fortnite a good industry example?", "It is free-to-play, cross-platform and uses in-game purchases.", ""],
         ["What two TV genres can be studied?", "Crime drama or sitcom.", ""],
@@ -204,5 +206,6 @@ export default {
         ["What should a top answer always do?", "Use terminology, apply theory, refer to the products, and link to context.", ""],
       ],
     },
+    ...sets,
   ],
 }
