@@ -3,7 +3,6 @@ import type { CSSProperties } from 'react'
 import SubjectIcon from './SubjectIcon'
 import { AnimatedNumber } from '../ui/motion'
 import type { Subject, ContentMode } from './Sidebar'
-// @ts-expect-error — untyped JS module
 import { flattenCards } from '../subjects.js'
 import {
   loadActivity,

@@ -6,7 +6,6 @@
    localStorage on this device so the feature still works — the UI says
    so, so nothing silently pretends to be published. */
 
-// @ts-expect-error — untyped JS module
 import { supabase, isSupabaseConfigured } from './supabaseClient.js'
 
 export type Tier = '' | 'F' | 'H'

@@ -1,6 +1,5 @@
 import type { ReactNode } from 'react'
 import { motion } from 'framer-motion'
-// @ts-expect-error — Logo is an untyped JS file; migrate to TS later.
 import Logo from './Logo.jsx'
 import SubjectIcon from './SubjectIcon'
 

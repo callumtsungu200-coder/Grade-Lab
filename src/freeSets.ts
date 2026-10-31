@@ -13,7 +13,6 @@
    to device-only. Full access ignores all of this. */
 
 import { useEffect, useState } from 'react'
-// @ts-expect-error — untyped JS module
 import { supabase, isSupabaseConfigured } from './supabaseClient.js'
 
 export const FREE_SET_LIMIT = 5
