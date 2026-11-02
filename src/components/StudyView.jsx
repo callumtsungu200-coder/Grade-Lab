@@ -24,8 +24,10 @@ export default function StudyView({
       ? 'Every topic'
       : session.topicCode === 'DUE'
         ? 'Due for review'
-        : (subject.topics.find((t) => t.code === session.topicCode)?.name ?? '')
-  const pillCode = session.topicCode === 'ALL' ? 'ALL' : session.topicCode
+        : session.topicCode === 'MOCK'
+          ? session.title
+          : (subject.topics.find((t) => t.code === session.topicCode)?.name ?? '')
+  const pillCode = session.topicCode === 'ALL' ? 'ALL' : session.topicCode === 'MOCK' ? 'PPE' : session.topicCode
 
   const cardWithStatus = card ? { ...card, status: progress[card.id] } : null
 
@@ -40,7 +42,7 @@ export default function StudyView({
           <span className="study-topic-name">{topicName}</span>
         </div>
         <div className="study-tools">
-          {session.topicCode !== 'DUE' && (
+          {session.topicCode !== 'DUE' && session.topicCode !== 'MOCK' && (
             <select value={mode} onChange={(e) => onChangeMode(e.target.value)} aria-label="Filter cards">
               <option value="all">All cards</option>
               <option value="learning">Learning + new</option>

@@ -5,7 +5,7 @@ import SubjectIcon from './SubjectIcon'
 
 /* ---------------------------------------------------------------- Types */
 
-export type ContentMode = 'cards' | 'quiz' | 'exam' | 'papers'
+export type ContentMode = 'cards' | 'quiz' | 'exam' | 'papers' | 'mock'
 export type View = 'topics' | 'study'
 export type Page = 'dashboard' | 'subject'
 
@@ -94,6 +94,7 @@ export interface SidebarProps {
   onGoTopics: () => void
   open: boolean
   onClose: () => void
+  showMock?: boolean
 }
 
 /* -------------------------------------------------------------- Helpers */
@@ -121,6 +122,8 @@ const MODES: { id: ContentMode; label: string; icon: ReactNode }[] = [
   { id: 'papers', label: 'Past Papers', icon: <IconPapers /> },
 ]
 
+const MOCK_MODE = { id: 'mock' as ContentMode, label: 'PPE Mock', icon: <IconQuiz /> }
+
 /* ------------------------------------------------------------ Component */
 
 /**
@@ -147,6 +150,7 @@ export default function Sidebar({
   onGoTopics,
   open,
   onClose,
+  showMock = false,
 }: SidebarProps) {
   const initial = (profileName || 'You').trim().charAt(0).toUpperCase()
   const avatar = game?.avatar || null
@@ -227,7 +231,7 @@ export default function Sidebar({
         <div className="sb-section">
           <p className="sb-section-title">Study</p>
           <nav className="sb-nav" aria-label="Study modes">
-            {MODES.map((m) => {
+            {(showMock ? [...MODES, MOCK_MODE] : MODES).map((m) => {
               const active = page === 'subject' && contentMode === m.id
               return (
                 <button

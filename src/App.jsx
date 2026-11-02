@@ -33,6 +33,8 @@ import { AUTH_KEY } from './auth.js'
 import { computeGame, equippedAvatar, recordQuiz, CURRENCY } from './gamification.js'
 import { isSupabaseConfigured, supabase, fetchCloudProgress, saveCloudProgress, fetchPaid, upsertLeaderboard, deleteOwnAccount } from './supabaseClient.js'
 import { OWNER_EMAILS, SUPPORT_EMAIL, STRIPE_PORTAL_LINK, NAME_OVERRIDES } from './supabaseConfig.js'
+import { MOCK_SUBJECT_ID, hasMockPage } from './mockTopics'
+import MockTopicsView from './components/MockTopicsView'
 
 // Gather every subject's progress from localStorage into one object for the cloud.
 function gatherLocalProgress() {
@@ -192,6 +194,11 @@ export default function App() {
     return access === 'demo' ? 'Guest' : 'You'
   })()
   const hasAccess = paid || isOwner
+
+  // Personal mock page. Dev-only: `localStorage.setItem('gradelab-dev-mock', '1')`
+  // under `npm run dev` previews it without signing in. Dead code in builds.
+  const devMock = import.meta.env.DEV && localStorage.getItem('gradelab-dev-mock') === '1'
+  const showMock = hasMockPage(user?.email, subjectId) || (devMock && subjectId === MOCK_SUBJECT_ID)
 
   // Free plan: guests and unpaid accounts can unlock FREE_SET_LIMIT sets
   // (a flashcard deck, a quiz section or an exam section each). Progress
@@ -452,6 +459,7 @@ export default function App() {
     setProgress(loadProgress(id))
     setCustom(loadCustom(id))
     setView('topics')
+    setContentMode((m) => (m === 'mock' ? 'cards' : m)) // the mock page belongs to one subject
     setHideHT(false)
     setHideOnly(false)
     setMode('all')
@@ -506,6 +514,14 @@ export default function App() {
     [applyMode, collectCards, mode, dueNow],
   )
 
+  const startMockSession = useCallback((title, cards) => {
+    celebratedRef.current = false
+    setSession({ topicCode: 'MOCK', title, cards, index: 0 })
+    setFlipped(false)
+    setView('study')
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }, [])
+
   const goTopics = useCallback(() => setView('topics'), [])
 
   const next = useCallback(() => {
@@ -545,7 +561,7 @@ export default function App() {
         const nextProgress = { ...progress, [card.id]: status }
         setProgress(nextProgress)
 
-        if (mode !== 'all' && s.topicCode !== 'DUE') {
+        if (mode !== 'all' && s.topicCode !== 'DUE' && s.topicCode !== 'MOCK') {
           // Rebuild the filtered list, trying to keep our place.
           const base = allCards.filter(
             (c) => (s.topicCode === 'ALL' || c.code === s.topicCode) && visibleByTier(c),
@@ -989,6 +1005,7 @@ export default function App() {
         onGoTopics={goTopics}
         open={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
+        showMock={showMock}
       />
 
       <div className="app-body">
@@ -1014,7 +1031,9 @@ export default function App() {
                     ? 'Quiz'
                     : contentMode === 'papers'
                       ? 'Past Papers'
-                      : 'Exam Questions'}
+                      : contentMode === 'mock'
+                        ? 'PPE Mock'
+                        : 'Exam Questions'}
             </span>
           </div>
         </div>
@@ -1037,6 +1056,13 @@ export default function App() {
             onQuickAction={quickAction}
             dueBySubject={dueBySubject}
             onReviewDue={reviewDue}
+          />
+        ) : contentMode === 'mock' && showMock && view !== 'study' ? (
+          <MockTopicsView
+            subjectName={subject.name}
+            subjectSpec={subject.spec}
+            allCards={allCards}
+            onStudy={startMockSession}
           />
         ) : contentMode === 'papers' ? (
           <PastPapersView subject={subject} canPost={isOwner} />
@@ -1142,6 +1168,7 @@ export default function App() {
                 locked={
                   isFree &&
                   session.topicCode !== 'DUE' &&
+                  session.topicCode !== 'MOCK' &&
                   !freeSets.isUnlocked(setKey.cards(subjectId, session.topicCode))
                 }
                 onUnlock={promptUnlock}
